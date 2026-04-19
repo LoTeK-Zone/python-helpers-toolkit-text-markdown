@@ -3183,7 +3183,7 @@ def _build_cli_examples(examples: list[str] | None) -> str:
 
 def _create_main_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="python_helpers-toolkit-text-markdown.py",
+        prog="python-helpers-toolkit-text-markdown.py",
         description="Compact Python helper toolkit for recurring project tasks.",
         formatter_class=ToolkitHelpFormatter,
     )
@@ -3388,8 +3388,8 @@ def render_cli_command_reference_markdown(parser: argparse.ArgumentParser) -> st
         "",
         "## CLI Help Coverage",
         "",
-        "- `python python_helpers-toolkit-text-markdown.py --help` lists all available commands.",
-        "- `python python_helpers-toolkit-text-markdown.py <command> --help` lists that command's parameters, defaults, choices, and examples.",
+        "- `python python-helpers-toolkit-text-markdown.py --help` lists all available commands.",
+        "- `python python-helpers-toolkit-text-markdown.py <command> --help` lists that command's parameters, defaults, choices, and examples.",
         "- The same parser metadata drives this file, the README quick reference, and the live CLI help output.",
         "",
         "## Command Index",
@@ -3515,8 +3515,8 @@ def _register_markdown_commands(subparsers) -> None:
         summary="Extract a Markdown section by heading.",
         description="Extract one Markdown section by exact heading text.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py extract-section --input README.md --heading Installation",
-            'python python_helpers-toolkit-text-markdown.py extract-section --input README.md --heading Usage --output usage.md',
+            "python python-helpers-toolkit-text-markdown.py extract-section --input README.md --heading Installation",
+            'python python-helpers-toolkit-text-markdown.py extract-section --input README.md --heading Usage --output usage.md',
         ],
     )
     _add_input_file_arg(parser, "Markdown input file.")
@@ -3531,8 +3531,8 @@ def _register_markdown_commands(subparsers) -> None:
         summary="Extract fenced code blocks from Markdown.",
         description="Extract fenced code blocks from Markdown files.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py extract-codeblocks --input notes.md --language python",
-            "python python_helpers-toolkit-text-markdown.py extract-codeblocks --input notes.md --language python --output-dir out_blocks --extension py",
+            "python python-helpers-toolkit-text-markdown.py extract-codeblocks --input notes.md --language python",
+            "python python-helpers-toolkit-text-markdown.py extract-codeblocks --input notes.md --language python --output-dir out_blocks --extension py",
         ],
     )
     _add_input_file_arg(parser, "Markdown input file.")
@@ -3551,8 +3551,8 @@ def _register_markdown_commands(subparsers) -> None:
         summary="Build a Markdown heading index.",
         description="Build an index of Markdown headings with line numbers and anchors.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py md-heading-index --input README.md",
-            "python python_helpers-toolkit-text-markdown.py md-heading-index --input README.md --format json --output heading_index.json",
+            "python python-helpers-toolkit-text-markdown.py md-heading-index --input README.md",
+            "python python-helpers-toolkit-text-markdown.py md-heading-index --input README.md --format json --output heading_index.json",
         ],
     )
     _add_input_file_arg(parser, "Markdown input file.")
@@ -3567,8 +3567,8 @@ def _register_markdown_commands(subparsers) -> None:
         summary="Split a Markdown file into heading-based section files.",
         description="Split a Markdown file into multiple section files based on one heading level.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py split-markdown-sections --input README.md --level 2 --output-dir out_sections",
-            "python python_helpers-toolkit-text-markdown.py split-markdown-sections --input notes.md --level 3 --output-dir out_sections --prefix part",
+            "python python-helpers-toolkit-text-markdown.py split-markdown-sections --input README.md --level 2 --output-dir out_sections",
+            "python python-helpers-toolkit-text-markdown.py split-markdown-sections --input notes.md --level 3 --output-dir out_sections --prefix part",
         ],
     )
     _add_input_file_arg(parser, "Markdown input file.")
@@ -3584,8 +3584,8 @@ def _register_markdown_commands(subparsers) -> None:
         summary="Extract a simple frontmatter block from Markdown.",
         description="Extract a simple leading frontmatter block and optionally write the remaining body.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py frontmatter-extract --input note.md",
-            "python python_helpers-toolkit-text-markdown.py frontmatter-extract --input note.md --format text --body-output body.md",
+            "python python-helpers-toolkit-text-markdown.py frontmatter-extract --input note.md",
+            "python python-helpers-toolkit-text-markdown.py frontmatter-extract --input note.md --format text --body-output body.md",
         ],
     )
     _add_input_file_arg(parser, "Markdown input file.")
@@ -3601,7 +3601,7 @@ def _register_markdown_commands(subparsers) -> None:
         summary="Remove a leading frontmatter block from Markdown.",
         description="Remove a simple leading frontmatter block from a Markdown file.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py frontmatter-remove --input note.md --output note_clean.md",
+            "python python-helpers-toolkit-text-markdown.py frontmatter-remove --input note.md --output note_clean.md",
         ],
     )
     _add_input_file_arg(parser, "Markdown input file.")
@@ -3615,8 +3615,8 @@ def _register_markdown_commands(subparsers) -> None:
         summary="Count fenced code block languages in Markdown.",
         description="Count fenced code blocks by language in a Markdown file.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py codeblock-language-stats --input README.md",
-            "python python_helpers-toolkit-text-markdown.py codeblock-language-stats --input README.md --format json --output stats.json",
+            "python python-helpers-toolkit-text-markdown.py codeblock-language-stats --input README.md",
+            "python python-helpers-toolkit-text-markdown.py codeblock-language-stats --input README.md --format json --output stats.json",
         ],
     )
     _add_input_file_arg(parser, "Markdown input file.")
@@ -3631,8 +3631,8 @@ def _register_markdown_commands(subparsers) -> None:
         summary="Extract Markdown inline links and images.",
         description="Extract inline Markdown links and image references from a Markdown file.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py markdown-link-extract --input README.md",
-            "python python_helpers-toolkit-text-markdown.py markdown-link-extract --input README.md --format json --output links.json",
+            "python python-helpers-toolkit-text-markdown.py markdown-link-extract --input README.md",
+            "python python-helpers-toolkit-text-markdown.py markdown-link-extract --input README.md --format json --output links.json",
         ],
     )
     _add_input_file_arg(parser, "Markdown input file.")
@@ -3647,8 +3647,8 @@ def _register_markdown_commands(subparsers) -> None:
         summary="Check local Markdown links and anchors.",
         description="Check local Markdown links and local heading anchors without probing external HTTP targets.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py markdown-link-check --input README.md",
-            "python python_helpers-toolkit-text-markdown.py markdown-link-check --input README.md --root . --only-issues --format json",
+            "python python-helpers-toolkit-text-markdown.py markdown-link-check --input README.md",
+            "python python-helpers-toolkit-text-markdown.py markdown-link-check --input README.md --root . --only-issues --format json",
         ],
     )
     _add_input_file_arg(parser, "Markdown input file.")
@@ -3665,8 +3665,8 @@ def _register_markdown_commands(subparsers) -> None:
         summary="Inventory Markdown and HTML image references.",
         description="Inventory Markdown and HTML image references from one file or a project tree.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py markdown-image-inventory --input README.md",
-            "python python_helpers-toolkit-text-markdown.py markdown-image-inventory --root . --ext md,markdown --format json --output image_inventory.json",
+            "python python-helpers-toolkit-text-markdown.py markdown-image-inventory --input README.md",
+            "python python-helpers-toolkit-text-markdown.py markdown-image-inventory --root . --ext md,markdown --format json --output image_inventory.json",
         ],
     )
     image_scope = parser.add_mutually_exclusive_group(required=True)
@@ -3685,8 +3685,8 @@ def _register_markdown_commands(subparsers) -> None:
         summary="Count words per Markdown heading section.",
         description="Count words below each Markdown heading until the next sibling or parent-level heading.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py markdown-word-count-by-heading --input README.md",
-            "python python_helpers-toolkit-text-markdown.py markdown-word-count-by-heading --input notes.md --format json --output heading_counts.json",
+            "python python-helpers-toolkit-text-markdown.py markdown-word-count-by-heading --input README.md",
+            "python python-helpers-toolkit-text-markdown.py markdown-word-count-by-heading --input notes.md --format json --output heading_counts.json",
         ],
     )
     _add_input_file_arg(parser, "Markdown input file.")
@@ -3701,8 +3701,8 @@ def _register_markdown_commands(subparsers) -> None:
         summary="Generate a Markdown table of contents from headings.",
         description="Generate a Markdown table of contents based on document headings.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py markdown-toc-generate --input README.md",
-            "python python_helpers-toolkit-text-markdown.py markdown-toc-generate --input notes.md --min-level 2 --max-level 4 --skip-first-h1 --output toc.md",
+            "python python-helpers-toolkit-text-markdown.py markdown-toc-generate --input README.md",
+            "python python-helpers-toolkit-text-markdown.py markdown-toc-generate --input notes.md --min-level 2 --max-level 4 --skip-first-h1 --output toc.md",
         ],
     )
     _add_input_file_arg(parser, "Markdown input file.")
@@ -3719,8 +3719,8 @@ def _register_markdown_commands(subparsers) -> None:
         summary="Normalize Markdown tables into padded stable output.",
         description="Detect standard Markdown tables and rewrite them with padded aligned columns.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py markdown-table-normalize --input README.md",
-            "python python_helpers-toolkit-text-markdown.py markdown-table-normalize --input tables.md --min-columns 3 --output tables_clean.md",
+            "python python-helpers-toolkit-text-markdown.py markdown-table-normalize --input README.md",
+            "python python-helpers-toolkit-text-markdown.py markdown-table-normalize --input tables.md --min-columns 3 --output tables_clean.md",
         ],
     )
     _add_input_file_arg(parser, "Markdown input file.")
@@ -3744,7 +3744,7 @@ def _register_data_commands(subparsers) -> None:
         summary="Convert a simple INI file to TOML.",
         description="Convert a simple INI file to TOML using lightweight value inference.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py ini-to-toml --input settings.ini --output settings.toml",
+            "python python-helpers-toolkit-text-markdown.py ini-to-toml --input settings.ini --output settings.toml",
         ],
     )
     _add_input_file_arg(parser, "INI input file.")
@@ -3758,8 +3758,8 @@ def _register_data_commands(subparsers) -> None:
         summary="Validate and pretty-print JSON.",
         description="Validate a JSON file and pretty-print it in a stable readable format.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py json-pretty --input data.json",
-            "python python_helpers-toolkit-text-markdown.py json-pretty --input data.json --sort-keys --output data_pretty.json",
+            "python python-helpers-toolkit-text-markdown.py json-pretty --input data.json",
+            "python python-helpers-toolkit-text-markdown.py json-pretty --input data.json --sort-keys --output data_pretty.json",
         ],
     )
     _add_input_file_arg(parser, "JSON input file.")
@@ -3776,8 +3776,8 @@ def _register_data_commands(subparsers) -> None:
         summary="Convert CSV into a padded Markdown table.",
         description="Convert CSV input into a padded Markdown table.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py csv-to-markdown --input table.csv",
-            'python python_helpers-toolkit-text-markdown.py csv-to-markdown --input table.csv --delimiter ";" --output table.md',
+            "python python-helpers-toolkit-text-markdown.py csv-to-markdown --input table.csv",
+            'python python-helpers-toolkit-text-markdown.py csv-to-markdown --input table.csv --delimiter ";" --output table.md',
         ],
     )
     _add_input_file_arg(parser, "CSV input file.")
@@ -3794,8 +3794,8 @@ def _register_data_commands(subparsers) -> None:
         summary="Deep-merge two TOML files.",
         description="Deep-merge two TOML files where override values replace base values.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py toml-merge --base default.toml --override local.toml",
-            "python python_helpers-toolkit-text-markdown.py toml-merge --base default.toml --override local.toml --output merged.toml",
+            "python python-helpers-toolkit-text-markdown.py toml-merge --base default.toml --override local.toml",
+            "python python-helpers-toolkit-text-markdown.py toml-merge --base default.toml --override local.toml --output merged.toml",
         ],
     )
     parser.add_argument("--base", required=True, help="Base TOML file.")
@@ -3810,8 +3810,8 @@ def _register_data_commands(subparsers) -> None:
         summary="Flatten TOML keys into dotted paths.",
         description="Flatten nested TOML keys into dotted path output for audits and comparisons.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py toml-key-flatten --input settings.toml",
-            "python python_helpers-toolkit-text-markdown.py toml-key-flatten --input settings.toml --format json --output flat_keys.json",
+            "python python-helpers-toolkit-text-markdown.py toml-key-flatten --input settings.toml",
+            "python python-helpers-toolkit-text-markdown.py toml-key-flatten --input settings.toml --format json --output flat_keys.json",
         ],
     )
     _add_input_file_arg(parser, "TOML input file.")
@@ -3826,8 +3826,8 @@ def _register_data_commands(subparsers) -> None:
         summary="Convert a JSON object file to TOML.",
         description="Convert a JSON object file to TOML.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py json-to-toml --input config.json",
-            "python python_helpers-toolkit-text-markdown.py json-to-toml --input config.json --output config.toml",
+            "python python-helpers-toolkit-text-markdown.py json-to-toml --input config.json",
+            "python python-helpers-toolkit-text-markdown.py json-to-toml --input config.json --output config.toml",
         ],
     )
     _add_input_file_arg(parser, "JSON input file.")
@@ -3841,8 +3841,8 @@ def _register_data_commands(subparsers) -> None:
         summary="Flatten JSON keys into dotted paths.",
         description="Flatten nested JSON keys into dotted paths with array indices.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py json-key-flatten --input data.json",
-            "python python_helpers-toolkit-text-markdown.py json-key-flatten --input data.json --format json --output flat_keys.json",
+            "python python-helpers-toolkit-text-markdown.py json-key-flatten --input data.json",
+            "python python-helpers-toolkit-text-markdown.py json-key-flatten --input data.json --format json --output flat_keys.json",
         ],
     )
     _add_input_file_arg(parser, "JSON input file.")
@@ -3859,8 +3859,8 @@ def _register_data_commands(subparsers) -> None:
         summary="Convert JSONL into one JSON array.",
         description="Read newline-delimited JSON and write one pretty-printed JSON array.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py jsonl-to-json-array --input records.jsonl --output records.json",
-            "python python_helpers-toolkit-text-markdown.py jsonl-to-json-array --input records.jsonl --skip-invalid --indent 2",
+            "python python-helpers-toolkit-text-markdown.py jsonl-to-json-array --input records.jsonl --output records.json",
+            "python python-helpers-toolkit-text-markdown.py jsonl-to-json-array --input records.jsonl --skip-invalid --indent 2",
         ],
     )
     _add_input_file_arg(parser, "JSONL input file.")
@@ -3878,8 +3878,8 @@ def _register_data_commands(subparsers) -> None:
         summary="Select and reorder CSV columns.",
         description="Select a subset of CSV columns by header name or 1-based index and write a reduced CSV file.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py csv-column-select --input table.csv --columns title,url,date --output slim.csv",
-            "python python_helpers-toolkit-text-markdown.py csv-column-select --input table.csv --columns 1,4,2 --no-header --output reordered.csv",
+            "python python-helpers-toolkit-text-markdown.py csv-column-select --input table.csv --columns title,url,date --output slim.csv",
+            "python python-helpers-toolkit-text-markdown.py csv-column-select --input table.csv --columns 1,4,2 --no-header --output reordered.csv",
         ],
     )
     _add_input_file_arg(parser, "CSV input file.")
@@ -3897,8 +3897,8 @@ def _register_data_commands(subparsers) -> None:
         summary="Validate and pretty-print XML.",
         description="Validate XML input and rewrite it in a stable indented layout.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py xml-pretty --input sitemap.xml",
-            "python python_helpers-toolkit-text-markdown.py xml-pretty --input export.xml --indent 4 --output export_pretty.xml",
+            "python python-helpers-toolkit-text-markdown.py xml-pretty --input sitemap.xml",
+            "python python-helpers-toolkit-text-markdown.py xml-pretty --input export.xml --indent 4 --output export_pretty.xml",
         ],
     )
     _add_input_file_arg(parser, "XML input file.")
@@ -3922,8 +3922,8 @@ def _register_text_commands(subparsers) -> None:
         summary="Replace text between two markers.",
         description="Replace the content between two known start and end markers.",
         examples=[
-            'python python_helpers-toolkit-text-markdown.py replace-between-markers --input app.js --start-marker "/* START */" --end-marker "/* END */" --replacement-file new_block.txt',
-            'python python_helpers-toolkit-text-markdown.py replace-between-markers --input config.md --start-marker "<!-- START -->" --end-marker "<!-- END -->" --replacement-text "New content"',
+            'python python-helpers-toolkit-text-markdown.py replace-between-markers --input app.js --start-marker "/* START */" --end-marker "/* END */" --replacement-file new_block.txt',
+            'python python-helpers-toolkit-text-markdown.py replace-between-markers --input config.md --start-marker "<!-- START -->" --end-marker "<!-- END -->" --replacement-text "New content"',
         ],
     )
     _add_input_file_arg(parser, "Target file.")
@@ -3941,8 +3941,8 @@ def _register_text_commands(subparsers) -> None:
         summary="Normalize line endings and whitespace.",
         description="Normalize line endings, trim trailing whitespace, and optionally expand tabs.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py normalize-text --input README.md --line-ending lf",
-            "python python_helpers-toolkit-text-markdown.py normalize-text --input script.py --expand-tabs 4 --output script_clean.py",
+            "python python-helpers-toolkit-text-markdown.py normalize-text --input README.md --line-ending lf",
+            "python python-helpers-toolkit-text-markdown.py normalize-text --input script.py --expand-tabs 4 --output script_clean.py",
         ],
     )
     _add_input_file_arg(parser, "Input text file.")
@@ -3960,8 +3960,8 @@ def _register_text_commands(subparsers) -> None:
         summary="Find text matches across files.",
         description="Find literal text or regex matches across multiple files.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py find-text --root . --query TODO --ext py,md",
-            'python python_helpers-toolkit-text-markdown.py find-text --root . --query "class\\s+\\w+" --ext py --regex --format json',
+            "python python-helpers-toolkit-text-markdown.py find-text --root . --query TODO --ext py,md",
+            'python python-helpers-toolkit-text-markdown.py find-text --root . --query "class\\s+\\w+" --ext py --regex --format json',
         ],
     )
     _add_root_arg(parser, "Root directory to scan.")
@@ -3981,8 +3981,8 @@ def _register_text_commands(subparsers) -> None:
         summary="Replace text across files with dry-run support.",
         description="Replace text across multiple files with optional dry-run and backup support.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py safe-search-replace --root . --query foo --replacement bar --ext py --dry-run",
-            'python python_helpers-toolkit-text-markdown.py safe-search-replace --root . --query "foo\\((.*?)\\)" --replacement "bar(\\1)" --ext py --regex --create-backup',
+            "python python-helpers-toolkit-text-markdown.py safe-search-replace --root . --query foo --replacement bar --ext py --dry-run",
+            'python python-helpers-toolkit-text-markdown.py safe-search-replace --root . --query "foo\\((.*?)\\)" --replacement "bar(\\1)" --ext py --regex --create-backup',
         ],
     )
     _add_root_arg(parser, "Root directory to scan.")
@@ -4004,8 +4004,8 @@ def _register_text_commands(subparsers) -> None:
         summary="Find duplicate lines in a text file.",
         description="Find duplicate lines inside a text file.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py duplicate-line-finder --input keywords.txt",
-            "python python_helpers-toolkit-text-markdown.py duplicate-line-finder --input keywords.txt --ignore-case --strip-ws --skip-empty",
+            "python python-helpers-toolkit-text-markdown.py duplicate-line-finder --input keywords.txt",
+            "python python-helpers-toolkit-text-markdown.py duplicate-line-finder --input keywords.txt --ignore-case --strip-ws --skip-empty",
         ],
     )
     _add_input_file_arg(parser, "Input text file.")
@@ -4023,8 +4023,8 @@ def _register_text_commands(subparsers) -> None:
         summary="Build a frequency report for words, tokens, or lines.",
         description="Build a frequency report for words, tokens, or lines in a text file.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py text-frequency-report --input notes.txt --mode word --top-n 50",
-            "python python_helpers-toolkit-text-markdown.py text-frequency-report --input prompts.txt --mode line --ignore-case --strip-ws --format json",
+            "python python-helpers-toolkit-text-markdown.py text-frequency-report --input notes.txt --mode word --top-n 50",
+            "python python-helpers-toolkit-text-markdown.py text-frequency-report --input prompts.txt --mode line --ignore-case --strip-ws --format json",
         ],
     )
     _add_input_file_arg(parser, "Input text file.")
@@ -4045,8 +4045,8 @@ def _register_text_commands(subparsers) -> None:
         summary="Keep only the first unique occurrence of each line.",
         description="Keep only the first unique occurrence of each line from a text file.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py unique-line-filter --input keywords.txt",
-            "python python_helpers-toolkit-text-markdown.py unique-line-filter --input tags.txt --ignore-case --strip-ws --skip-empty --output unique_tags.txt",
+            "python python-helpers-toolkit-text-markdown.py unique-line-filter --input keywords.txt",
+            "python python-helpers-toolkit-text-markdown.py unique-line-filter --input tags.txt --ignore-case --strip-ws --skip-empty --output unique_tags.txt",
         ],
     )
     _add_input_file_arg(parser, "Input text file.")
@@ -4064,8 +4064,8 @@ def _register_text_commands(subparsers) -> None:
         summary="Rewrite path prefixes across text files.",
         description="Rewrite path prefixes across multiple text files with preview or apply mode.",
         examples=[
-            'python python_helpers-toolkit-text-markdown.py path-rewrite --root . --from-prefix "assets/old/" --to-prefix "assets/new/"',
-            'python python_helpers-toolkit-text-markdown.py path-rewrite --root . --from-prefix "C:\\Old\\Base" --to-prefix "D:\\New\\Base" --slash-style windows --apply --create-backup',
+            'python python-helpers-toolkit-text-markdown.py path-rewrite --root . --from-prefix "assets/old/" --to-prefix "assets/new/"',
+            'python python-helpers-toolkit-text-markdown.py path-rewrite --root . --from-prefix "C:\\Old\\Base" --to-prefix "D:\\New\\Base" --slash-style windows --apply --create-backup',
         ],
     )
     _add_root_arg(parser, "Project root directory.")
@@ -4087,8 +4087,8 @@ def _register_text_commands(subparsers) -> None:
         summary="Split long text into reusable chunks.",
         description="Split a text file into numbered chunks by characters, words, or lines.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py text-chunk-split --input big.txt --output-dir out_chunks --mode words --max-size 400",
-            "python python_helpers-toolkit-text-markdown.py text-chunk-split --input big.txt --output-dir out_chunks --mode chars --max-size 2000 --overlap 200",
+            "python python-helpers-toolkit-text-markdown.py text-chunk-split --input big.txt --output-dir out_chunks --mode words --max-size 400",
+            "python python-helpers-toolkit-text-markdown.py text-chunk-split --input big.txt --output-dir out_chunks --mode chars --max-size 2000 --overlap 200",
         ],
     )
     _add_input_file_arg(parser, "Input text file.")
@@ -4116,8 +4116,8 @@ def _register_file_commands(subparsers) -> None:
         summary="Create a lightweight file index.",
         description="Create a lightweight file index for a project root.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py project-index --root . --ext py,md,js --format text",
-            "python python_helpers-toolkit-text-markdown.py project-index --root . --ext py,md --format json --output project_index.json",
+            "python python-helpers-toolkit-text-markdown.py project-index --root . --ext py,md,js --format text",
+            "python python-helpers-toolkit-text-markdown.py project-index --root . --ext py,md --format json --output project_index.json",
         ],
     )
     _add_root_arg(parser, "Project root directory.")
@@ -4132,8 +4132,8 @@ def _register_file_commands(subparsers) -> None:
         summary="Create a compact project manifest.",
         description="Create a compact project manifest with suffix statistics and largest files.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py project-manifest --root . --ext py,md,js",
-            "python python_helpers-toolkit-text-markdown.py project-manifest --root . --format json --output manifest.json",
+            "python python-helpers-toolkit-text-markdown.py project-manifest --root . --ext py,md,js",
+            "python python-helpers-toolkit-text-markdown.py project-manifest --root . --format json --output manifest.json",
         ],
     )
     _add_root_arg(parser, "Project root directory.")
@@ -4150,8 +4150,8 @@ def _register_file_commands(subparsers) -> None:
         summary="Create a file hash manifest for a directory.",
         description="Create a file hash manifest for a directory tree.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py file-hash-manifest --root . --format json --output manifest.json",
-            "python python_helpers-toolkit-text-markdown.py file-hash-manifest --root . --ext md,txt --algorithm sha256",
+            "python python-helpers-toolkit-text-markdown.py file-hash-manifest --root . --format json --output manifest.json",
+            "python python-helpers-toolkit-text-markdown.py file-hash-manifest --root . --ext md,txt --algorithm sha256",
         ],
     )
     _add_root_arg(parser, "Project root directory.")
@@ -4168,8 +4168,8 @@ def _register_file_commands(subparsers) -> None:
         summary="Compare two JSON file hash manifests.",
         description="Compare two JSON file hash manifests generated by file-hash-manifest.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py manifest-diff --base manifest_old.json --other manifest_new.json",
-            "python python_helpers-toolkit-text-markdown.py manifest-diff --base manifest_old.json --other manifest_new.json --format json --output diff.json",
+            "python python-helpers-toolkit-text-markdown.py manifest-diff --base manifest_old.json --other manifest_new.json",
+            "python python-helpers-toolkit-text-markdown.py manifest-diff --base manifest_old.json --other manifest_new.json --format json --output diff.json",
         ],
     )
     parser.add_argument("--base", required=True, help="Base manifest JSON file.")
@@ -4185,8 +4185,8 @@ def _register_file_commands(subparsers) -> None:
         summary="Find duplicate files by size and hash.",
         description="Find duplicate files by size and hash across a directory tree.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py duplicate-file-finder --root .",
-            "python python_helpers-toolkit-text-markdown.py duplicate-file-finder --root . --ext jpg,png,webp --min-size 1024 --format json",
+            "python python-helpers-toolkit-text-markdown.py duplicate-file-finder --root .",
+            "python python-helpers-toolkit-text-markdown.py duplicate-file-finder --root . --ext jpg,png,webp --min-size 1024 --format json",
         ],
     )
     _add_root_arg(parser, "Project root directory.")
@@ -4204,8 +4204,8 @@ def _register_file_commands(subparsers) -> None:
         summary="Preview or apply safe batch file renames.",
         description="Preview or apply safe batch file renames based on stem transformations.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py safe-batch-rename --root . --find old --replace new",
-            "python python_helpers-toolkit-text-markdown.py safe-batch-rename --root . --prefix img_ --slugify --lowercase --apply",
+            "python python-helpers-toolkit-text-markdown.py safe-batch-rename --root . --find old --replace new",
+            "python python-helpers-toolkit-text-markdown.py safe-batch-rename --root . --prefix img_ --slugify --lowercase --apply",
         ],
     )
     _add_root_arg(parser, "Project root directory.")
@@ -4230,8 +4230,8 @@ def _register_file_commands(subparsers) -> None:
         summary="Preview or apply slugified filename renames.",
         description="Preview or apply slugified filename renames using the toolkit slugify rules.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py filename-slugify-batch --root .",
-            "python python_helpers-toolkit-text-markdown.py filename-slugify-batch --root . --ext jpg,png,webp --dedupe --lowercase-extension --apply",
+            "python python-helpers-toolkit-text-markdown.py filename-slugify-batch --root .",
+            "python python-helpers-toolkit-text-markdown.py filename-slugify-batch --root . --ext jpg,png,webp --dedupe --lowercase-extension --apply",
         ],
     )
     _add_root_arg(parser, "Project root directory.")
@@ -4260,8 +4260,8 @@ def _register_utility_commands(subparsers) -> None:
         summary="Export CLI quick reference and command reference.",
         description="Export CLI-driven documentation files from the real parser metadata registry.",
         examples=[
-            "python python_helpers-toolkit-text-markdown.py export-cli-docs --command-reference-output COMMAND_REFERENCE.md",
-            "python python_helpers-toolkit-text-markdown.py export-cli-docs --quick-reference-output README_QUICK_REFERENCE.md --command-reference-output COMMAND_REFERENCE.md",
+            "python python-helpers-toolkit-text-markdown.py export-cli-docs --command-reference-output COMMAND_REFERENCE.md",
+            "python python-helpers-toolkit-text-markdown.py export-cli-docs --quick-reference-output README_QUICK_REFERENCE.md --command-reference-output COMMAND_REFERENCE.md",
         ],
     )
     parser.add_argument("--quick-reference-output", help="Optional output file for the generated README quick reference section.")
