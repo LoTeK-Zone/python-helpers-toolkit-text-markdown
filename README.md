@@ -1,6 +1,6 @@
 # Python Helpers Toolkit Text Markdown README
 
-![version](https://img.shields.io/badge/version-v0.1.4-blue?style=flat-square&logo=github)
+![version](https://img.shields.io/badge/version-v0.2.1-blue?style=flat-square&logo=github)
 ![license](https://img.shields.io/badge/license-MIT-green?style=flat-square&logo=open-source-initiative)
 ![status](https://img.shields.io/badge/status-active-brightgreen?style=flat-square)
 ![python](https://img.shields.io/badge/language-Python-3776AB?style=flat-square&logo=python&logoColor=white)
