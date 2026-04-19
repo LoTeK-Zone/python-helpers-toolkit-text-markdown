@@ -4,8 +4,8 @@ This reference is generated from the real CLI parser metadata.
 
 ## CLI Help Coverage
 
-- `python python_helpers-toolkit-text-markdown.py --help` lists all available commands.
-- `python python_helpers-toolkit-text-markdown.py <command> --help` lists that command's parameters, defaults, choices, and examples.
+- `python python-helpers-toolkit-text-markdown.py --help` lists all available commands.
+- `python python-helpers-toolkit-text-markdown.py <command> --help` lists that command's parameters, defaults, choices, and examples.
 - The same parser metadata drives this file, the README quick reference, and the live CLI help output.
 
 ## Command Index
@@ -94,11 +94,11 @@ Export CLI-driven documentation files from the real parser metadata registry.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py export-cli-docs --command-reference-output COMMAND_REFERENCE.md
+python python-helpers-toolkit-text-markdown.py export-cli-docs --command-reference-output COMMAND_REFERENCE.md
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py export-cli-docs --quick-reference-output README_QUICK_REFERENCE.md --command-reference-output COMMAND_REFERENCE.md
+python python-helpers-toolkit-text-markdown.py export-cli-docs --quick-reference-output README_QUICK_REFERENCE.md --command-reference-output COMMAND_REFERENCE.md
 ```
 
 [Back to Command Index](#command-index)
@@ -138,11 +138,11 @@ Count fenced code blocks by language in a Markdown file.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py codeblock-language-stats --input README.md
+python python-helpers-toolkit-text-markdown.py codeblock-language-stats --input README.md
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py codeblock-language-stats --input README.md --format json --output stats.json
+python python-helpers-toolkit-text-markdown.py codeblock-language-stats --input README.md --format json --output stats.json
 ```
 
 [Back to Command Index](#command-index)
@@ -196,11 +196,11 @@ Extract fenced code blocks from Markdown files.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py extract-codeblocks --input notes.md --language python
+python python-helpers-toolkit-text-markdown.py extract-codeblocks --input notes.md --language python
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py extract-codeblocks --input notes.md --language python --output-dir out_blocks --extension py
+python python-helpers-toolkit-text-markdown.py extract-codeblocks --input notes.md --language python --output-dir out_blocks --extension py
 ```
 
 [Back to Command Index](#command-index)
@@ -236,11 +236,11 @@ Extract one Markdown section by exact heading text.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py extract-section --input README.md --heading Installation
+python python-helpers-toolkit-text-markdown.py extract-section --input README.md --heading Installation
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py extract-section --input README.md --heading Usage --output usage.md
+python python-helpers-toolkit-text-markdown.py extract-section --input README.md --heading Usage --output usage.md
 ```
 
 [Back to Command Index](#command-index)
@@ -282,11 +282,11 @@ Extract a simple leading frontmatter block and optionally write the remaining bo
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py frontmatter-extract --input note.md
+python python-helpers-toolkit-text-markdown.py frontmatter-extract --input note.md
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py frontmatter-extract --input note.md --format text --body-output body.md
+python python-helpers-toolkit-text-markdown.py frontmatter-extract --input note.md --format text --body-output body.md
 ```
 
 [Back to Command Index](#command-index)
@@ -318,7 +318,7 @@ Remove a simple leading frontmatter block from a Markdown file.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py frontmatter-remove --input note.md --output note_clean.md
+python python-helpers-toolkit-text-markdown.py frontmatter-remove --input note.md --output note_clean.md
 ```
 
 [Back to Command Index](#command-index)
@@ -390,11 +390,11 @@ Inventory Markdown and HTML image references from one file or a project tree.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py markdown-image-inventory --input README.md
+python python-helpers-toolkit-text-markdown.py markdown-image-inventory --input README.md
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py markdown-image-inventory --root . --ext md,markdown --format json --output image_inventory.json
+python python-helpers-toolkit-text-markdown.py markdown-image-inventory --root . --ext md,markdown --format json --output image_inventory.json
 ```
 
 [Back to Command Index](#command-index)
@@ -441,11 +441,11 @@ Check local Markdown links and local heading anchors without probing external HT
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py markdown-link-check --input README.md
+python python-helpers-toolkit-text-markdown.py markdown-link-check --input README.md
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py markdown-link-check --input README.md --root . --only-issues --format json
+python python-helpers-toolkit-text-markdown.py markdown-link-check --input README.md --root . --only-issues --format json
 ```
 
 [Back to Command Index](#command-index)
@@ -483,11 +483,11 @@ Extract inline Markdown links and image references from a Markdown file.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py markdown-link-extract --input README.md
+python python-helpers-toolkit-text-markdown.py markdown-link-extract --input README.md
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py markdown-link-extract --input README.md --format json --output links.json
+python python-helpers-toolkit-text-markdown.py markdown-link-extract --input README.md --format json --output links.json
 ```
 
 [Back to Command Index](#command-index)
@@ -524,11 +524,11 @@ Detect standard Markdown tables and rewrite them with padded aligned columns.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py markdown-table-normalize --input README.md
+python python-helpers-toolkit-text-markdown.py markdown-table-normalize --input README.md
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py markdown-table-normalize --input tables.md --min-columns 3 --output tables_clean.md
+python python-helpers-toolkit-text-markdown.py markdown-table-normalize --input tables.md --min-columns 3 --output tables_clean.md
 ```
 
 [Back to Command Index](#command-index)
@@ -575,11 +575,11 @@ Generate a Markdown table of contents based on document headings.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py markdown-toc-generate --input README.md
+python python-helpers-toolkit-text-markdown.py markdown-toc-generate --input README.md
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py markdown-toc-generate --input notes.md --min-level 2 --max-level 4 --skip-first-h1 --output toc.md
+python python-helpers-toolkit-text-markdown.py markdown-toc-generate --input notes.md --min-level 2 --max-level 4 --skip-first-h1 --output toc.md
 ```
 
 [Back to Command Index](#command-index)
@@ -617,11 +617,11 @@ Count words below each Markdown heading until the next sibling or parent-level h
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py markdown-word-count-by-heading --input README.md
+python python-helpers-toolkit-text-markdown.py markdown-word-count-by-heading --input README.md
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py markdown-word-count-by-heading --input notes.md --format json --output heading_counts.json
+python python-helpers-toolkit-text-markdown.py markdown-word-count-by-heading --input notes.md --format json --output heading_counts.json
 ```
 
 [Back to Command Index](#command-index)
@@ -659,11 +659,11 @@ Build an index of Markdown headings with line numbers and anchors.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py md-heading-index --input README.md
+python python-helpers-toolkit-text-markdown.py md-heading-index --input README.md
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py md-heading-index --input README.md --format json --output heading_index.json
+python python-helpers-toolkit-text-markdown.py md-heading-index --input README.md --format json --output heading_index.json
 ```
 
 [Back to Command Index](#command-index)
@@ -704,11 +704,11 @@ Split a Markdown file into multiple section files based on one heading level.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py split-markdown-sections --input README.md --level 2 --output-dir out_sections
+python python-helpers-toolkit-text-markdown.py split-markdown-sections --input README.md --level 2 --output-dir out_sections
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py split-markdown-sections --input notes.md --level 3 --output-dir out_sections --prefix part
+python python-helpers-toolkit-text-markdown.py split-markdown-sections --input notes.md --level 3 --output-dir out_sections --prefix part
 ```
 
 [Back to Command Index](#command-index)
@@ -761,11 +761,11 @@ Select a subset of CSV columns by header name or 1-based index and write a reduc
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py csv-column-select --input table.csv --columns title,url,date --output slim.csv
+python python-helpers-toolkit-text-markdown.py csv-column-select --input table.csv --columns title,url,date --output slim.csv
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py csv-column-select --input table.csv --columns 1,4,2 --no-header --output reordered.csv
+python python-helpers-toolkit-text-markdown.py csv-column-select --input table.csv --columns 1,4,2 --no-header --output reordered.csv
 ```
 
 [Back to Command Index](#command-index)
@@ -812,11 +812,11 @@ Convert CSV input into a padded Markdown table.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py csv-to-markdown --input table.csv
+python python-helpers-toolkit-text-markdown.py csv-to-markdown --input table.csv
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py csv-to-markdown --input table.csv --delimiter ";" --output table.md
+python python-helpers-toolkit-text-markdown.py csv-to-markdown --input table.csv --delimiter ";" --output table.md
 ```
 
 [Back to Command Index](#command-index)
@@ -848,7 +848,7 @@ Convert a simple INI file to TOML using lightweight value inference.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py ini-to-toml --input settings.ini --output settings.toml
+python python-helpers-toolkit-text-markdown.py ini-to-toml --input settings.ini --output settings.toml
 ```
 
 [Back to Command Index](#command-index)
@@ -886,11 +886,11 @@ Flatten nested JSON keys into dotted paths with array indices.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py json-key-flatten --input data.json
+python python-helpers-toolkit-text-markdown.py json-key-flatten --input data.json
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py json-key-flatten --input data.json --format json --output flat_keys.json
+python python-helpers-toolkit-text-markdown.py json-key-flatten --input data.json --format json --output flat_keys.json
 ```
 
 [Back to Command Index](#command-index)
@@ -937,11 +937,11 @@ Validate a JSON file and pretty-print it in a stable readable format.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py json-pretty --input data.json
+python python-helpers-toolkit-text-markdown.py json-pretty --input data.json
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py json-pretty --input data.json --sort-keys --output data_pretty.json
+python python-helpers-toolkit-text-markdown.py json-pretty --input data.json --sort-keys --output data_pretty.json
 ```
 
 [Back to Command Index](#command-index)
@@ -973,11 +973,11 @@ Convert a JSON object file to TOML.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py json-to-toml --input config.json
+python python-helpers-toolkit-text-markdown.py json-to-toml --input config.json
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py json-to-toml --input config.json --output config.toml
+python python-helpers-toolkit-text-markdown.py json-to-toml --input config.json --output config.toml
 ```
 
 [Back to Command Index](#command-index)
@@ -1028,11 +1028,11 @@ Read newline-delimited JSON and write one pretty-printed JSON array.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py jsonl-to-json-array --input records.jsonl --output records.json
+python python-helpers-toolkit-text-markdown.py jsonl-to-json-array --input records.jsonl --output records.json
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py jsonl-to-json-array --input records.jsonl --skip-invalid --indent 2
+python python-helpers-toolkit-text-markdown.py jsonl-to-json-array --input records.jsonl --skip-invalid --indent 2
 ```
 
 [Back to Command Index](#command-index)
@@ -1070,11 +1070,11 @@ Flatten nested TOML keys into dotted path output for audits and comparisons.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py toml-key-flatten --input settings.toml
+python python-helpers-toolkit-text-markdown.py toml-key-flatten --input settings.toml
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py toml-key-flatten --input settings.toml --format json --output flat_keys.json
+python python-helpers-toolkit-text-markdown.py toml-key-flatten --input settings.toml --format json --output flat_keys.json
 ```
 
 [Back to Command Index](#command-index)
@@ -1110,11 +1110,11 @@ Deep-merge two TOML files where override values replace base values.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py toml-merge --base default.toml --override local.toml
+python python-helpers-toolkit-text-markdown.py toml-merge --base default.toml --override local.toml
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py toml-merge --base default.toml --override local.toml --output merged.toml
+python python-helpers-toolkit-text-markdown.py toml-merge --base default.toml --override local.toml --output merged.toml
 ```
 
 [Back to Command Index](#command-index)
@@ -1151,11 +1151,11 @@ Validate XML input and rewrite it in a stable indented layout.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py xml-pretty --input sitemap.xml
+python python-helpers-toolkit-text-markdown.py xml-pretty --input sitemap.xml
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py xml-pretty --input export.xml --indent 4 --output export_pretty.xml
+python python-helpers-toolkit-text-markdown.py xml-pretty --input export.xml --indent 4 --output export_pretty.xml
 ```
 
 [Back to Command Index](#command-index)
@@ -1210,11 +1210,11 @@ Find duplicate lines inside a text file.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py duplicate-line-finder --input keywords.txt
+python python-helpers-toolkit-text-markdown.py duplicate-line-finder --input keywords.txt
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py duplicate-line-finder --input keywords.txt --ignore-case --strip-ws --skip-empty
+python python-helpers-toolkit-text-markdown.py duplicate-line-finder --input keywords.txt --ignore-case --strip-ws --skip-empty
 ```
 
 [Back to Command Index](#command-index)
@@ -1295,11 +1295,11 @@ Find literal text or regex matches across multiple files.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py find-text --root . --query TODO --ext py,md
+python python-helpers-toolkit-text-markdown.py find-text --root . --query TODO --ext py,md
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py find-text --root . --query "class\s+\w+" --ext py --regex --format json
+python python-helpers-toolkit-text-markdown.py find-text --root . --query "class\s+\w+" --ext py --regex --format json
 ```
 
 [Back to Command Index](#command-index)
@@ -1351,11 +1351,11 @@ Normalize line endings, trim trailing whitespace, and optionally expand tabs.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py normalize-text --input README.md --line-ending lf
+python python-helpers-toolkit-text-markdown.py normalize-text --input README.md --line-ending lf
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py normalize-text --input script.py --expand-tabs 4 --output script_clean.py
+python python-helpers-toolkit-text-markdown.py normalize-text --input script.py --expand-tabs 4 --output script_clean.py
 ```
 
 [Back to Command Index](#command-index)
@@ -1447,11 +1447,11 @@ Rewrite path prefixes across multiple text files with preview or apply mode.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py path-rewrite --root . --from-prefix "assets/old/" --to-prefix "assets/new/"
+python python-helpers-toolkit-text-markdown.py path-rewrite --root . --from-prefix "assets/old/" --to-prefix "assets/new/"
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py path-rewrite --root . --from-prefix "C:\Old\Base" --to-prefix "D:\New\Base" --slash-style windows --apply --create-backup
+python python-helpers-toolkit-text-markdown.py path-rewrite --root . --from-prefix "C:\Old\Base" --to-prefix "D:\New\Base" --slash-style windows --apply --create-backup
 ```
 
 [Back to Command Index](#command-index)
@@ -1499,11 +1499,11 @@ Replace the content between two known start and end markers.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py replace-between-markers --input app.js --start-marker "/* START */" --end-marker "/* END */" --replacement-file new_block.txt
+python python-helpers-toolkit-text-markdown.py replace-between-markers --input app.js --start-marker "/* START */" --end-marker "/* END */" --replacement-file new_block.txt
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py replace-between-markers --input config.md --start-marker "<!-- START -->" --end-marker "<!-- END -->" --replacement-text "New content"
+python python-helpers-toolkit-text-markdown.py replace-between-markers --input config.md --start-marker "<!-- START -->" --end-marker "<!-- END -->" --replacement-text "New content"
 ```
 
 [Back to Command Index](#command-index)
@@ -1594,11 +1594,11 @@ Replace text across multiple files with optional dry-run and backup support.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py safe-search-replace --root . --query foo --replacement bar --ext py --dry-run
+python python-helpers-toolkit-text-markdown.py safe-search-replace --root . --query foo --replacement bar --ext py --dry-run
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py safe-search-replace --root . --query "foo\((.*?)\)" --replacement "bar(\1)" --ext py --regex --create-backup
+python python-helpers-toolkit-text-markdown.py safe-search-replace --root . --query "foo\((.*?)\)" --replacement "bar(\1)" --ext py --regex --create-backup
 ```
 
 [Back to Command Index](#command-index)
@@ -1654,11 +1654,11 @@ Split a text file into numbered chunks by characters, words, or lines.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py text-chunk-split --input big.txt --output-dir out_chunks --mode words --max-size 400
+python python-helpers-toolkit-text-markdown.py text-chunk-split --input big.txt --output-dir out_chunks --mode words --max-size 400
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py text-chunk-split --input big.txt --output-dir out_chunks --mode chars --max-size 2000 --overlap 200
+python python-helpers-toolkit-text-markdown.py text-chunk-split --input big.txt --output-dir out_chunks --mode chars --max-size 2000 --overlap 200
 ```
 
 [Back to Command Index](#command-index)
@@ -1726,11 +1726,11 @@ Build a frequency report for words, tokens, or lines in a text file.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py text-frequency-report --input notes.txt --mode word --top-n 50
+python python-helpers-toolkit-text-markdown.py text-frequency-report --input notes.txt --mode word --top-n 50
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py text-frequency-report --input prompts.txt --mode line --ignore-case --strip-ws --format json
+python python-helpers-toolkit-text-markdown.py text-frequency-report --input prompts.txt --mode line --ignore-case --strip-ws --format json
 ```
 
 [Back to Command Index](#command-index)
@@ -1782,11 +1782,11 @@ Keep only the first unique occurrence of each line from a text file.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py unique-line-filter --input keywords.txt
+python python-helpers-toolkit-text-markdown.py unique-line-filter --input keywords.txt
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py unique-line-filter --input tags.txt --ignore-case --strip-ws --skip-empty --output unique_tags.txt
+python python-helpers-toolkit-text-markdown.py unique-line-filter --input tags.txt --ignore-case --strip-ws --skip-empty --output unique_tags.txt
 ```
 
 [Back to Command Index](#command-index)
@@ -1862,11 +1862,11 @@ Find duplicate files by size and hash across a directory tree.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py duplicate-file-finder --root .
+python python-helpers-toolkit-text-markdown.py duplicate-file-finder --root .
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py duplicate-file-finder --root . --ext jpg,png,webp --min-size 1024 --format json
+python python-helpers-toolkit-text-markdown.py duplicate-file-finder --root . --ext jpg,png,webp --min-size 1024 --format json
 ```
 
 [Back to Command Index](#command-index)
@@ -1935,11 +1935,11 @@ Create a file hash manifest for a directory tree.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py file-hash-manifest --root . --format json --output manifest.json
+python python-helpers-toolkit-text-markdown.py file-hash-manifest --root . --format json --output manifest.json
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py file-hash-manifest --root . --ext md,txt --algorithm sha256
+python python-helpers-toolkit-text-markdown.py file-hash-manifest --root . --ext md,txt --algorithm sha256
 ```
 
 [Back to Command Index](#command-index)
@@ -2017,11 +2017,11 @@ Preview or apply slugified filename renames using the toolkit slugify rules.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py filename-slugify-batch --root .
+python python-helpers-toolkit-text-markdown.py filename-slugify-batch --root .
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py filename-slugify-batch --root . --ext jpg,png,webp --dedupe --lowercase-extension --apply
+python python-helpers-toolkit-text-markdown.py filename-slugify-batch --root . --ext jpg,png,webp --dedupe --lowercase-extension --apply
 ```
 
 [Back to Command Index](#command-index)
@@ -2063,11 +2063,11 @@ Compare two JSON file hash manifests generated by file-hash-manifest.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py manifest-diff --base manifest_old.json --other manifest_new.json
+python python-helpers-toolkit-text-markdown.py manifest-diff --base manifest_old.json --other manifest_new.json
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py manifest-diff --base manifest_old.json --other manifest_new.json --format json --output diff.json
+python python-helpers-toolkit-text-markdown.py manifest-diff --base manifest_old.json --other manifest_new.json --format json --output diff.json
 ```
 
 [Back to Command Index](#command-index)
@@ -2125,11 +2125,11 @@ Create a lightweight file index for a project root.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py project-index --root . --ext py,md,js --format text
+python python-helpers-toolkit-text-markdown.py project-index --root . --ext py,md,js --format text
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py project-index --root . --ext py,md --format json --output project_index.json
+python python-helpers-toolkit-text-markdown.py project-index --root . --ext py,md --format json --output project_index.json
 ```
 
 [Back to Command Index](#command-index)
@@ -2197,11 +2197,11 @@ Create a compact project manifest with suffix statistics and largest files.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py project-manifest --root . --ext py,md,js
+python python-helpers-toolkit-text-markdown.py project-manifest --root . --ext py,md,js
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py project-manifest --root . --format json --output manifest.json
+python python-helpers-toolkit-text-markdown.py project-manifest --root . --format json --output manifest.json
 ```
 
 [Back to Command Index](#command-index)
@@ -2305,11 +2305,11 @@ Preview or apply safe batch file renames based on stem transformations.
 #### Examples
 
 ```bash
-python python_helpers-toolkit-text-markdown.py safe-batch-rename --root . --find old --replace new
+python python-helpers-toolkit-text-markdown.py safe-batch-rename --root . --find old --replace new
 ```
 
 ```bash
-python python_helpers-toolkit-text-markdown.py safe-batch-rename --root . --prefix img_ --slugify --lowercase --apply
+python python-helpers-toolkit-text-markdown.py safe-batch-rename --root . --prefix img_ --slugify --lowercase --apply
 ```
 
 [Back to Command Index](#command-index)
