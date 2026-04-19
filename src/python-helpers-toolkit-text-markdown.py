@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 """
-python_helpers.py
-Version: 0.1.4
-Date: 2026-04-17
-
-A compact standard-library helper collection for recurring project tasks.
-The file is intentionally self-contained and executable as a CLI.
+File: python-helpers-toolkit-text-markdown.py
+Description: A compact standard-library helper collection for recurring project tasks. The file is intentionally self-contained and executable as a CLI.
+Author: Stephan Kühn (LoTeK)
+Mail: info@lotek-zone.com
+Web: https://lotek-zone.com/
+GitHub: https://github.com/LoTeK-Zone
+Repository: https://github.com/LoTeK-Zone/python-helpers-toolkit-text-markdown
+Version: 0.2.1
+Last Updated: 2026-04-19
+License: MIT
 """
-
 from __future__ import annotations
 
 import argparse
@@ -19,7 +22,8 @@ import sys
 from pathlib import Path
 from typing import Iterable
 
-VERSION = "0.1.4"
+VERSION = "0.2.1"
+
 DEFAULT_IGNORED_DIRS = {
     ".git",
     ".hg",
@@ -38,13 +42,9 @@ DEFAULT_IGNORED_DIRS = {
 def _read_text(path: Path, encoding: str = "utf-8") -> str:
     return path.read_text(encoding=encoding)
 
-
-
 def _write_text(path: Path, text: str, encoding: str = "utf-8") -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(text, encoding=encoding)
-
-
+    path.write_text(text, encoding=encoding, newline="\n")  # Preserve exact LF output on all platforms
 
 def _parse_extensions(items: list[str] | None) -> set[str] | None:
     if not items:
@@ -2787,387 +2787,1515 @@ def cmd_filename_slugify_batch(args: argparse.Namespace) -> int:
 
 
 
-# Add new helper functions and cmd_* handlers above this section.
-# Add new CLI subparser definitions inside build_parser() before 'return parser'.
+
+def convert_jsonl_to_json_array(
+    jsonl_text: str,
+    skip_invalid: bool,
+    max_lines: int | None,
+) -> tuple[list[object], int]:
+    rows: list[object] = []
+    skipped = 0
+
+    for line_number, raw_line in enumerate(jsonl_text.splitlines(), start=1):
+        if max_lines is not None and line_number > max_lines:
+            break
+
+        line = raw_line.strip()
+        if not line:
+            continue  # Ignore empty lines for cleaner JSONL handling
+
+        try:
+            rows.append(json.loads(line))
+        except json.JSONDecodeError as exc:
+            if skip_invalid:
+                skipped += 1
+                continue  # Tolerate invalid rows in batch cleanup mode
+            raise ValueError(f"Invalid JSON on line {line_number}: {exc.msg}") from exc
+
+    return rows, skipped
+
+
+def cmd_jsonl_to_json_array(args: argparse.Namespace) -> int:
+    source = _read_text(Path(args.input), encoding=args.encoding)
+    rows, skipped = convert_jsonl_to_json_array(
+        jsonl_text=source,
+        skip_invalid=args.skip_invalid,
+        max_lines=args.max_lines,
+    )
+    output = json.dumps(rows, indent=args.indent, ensure_ascii=args.ensure_ascii) + "\n"
+
+    if args.output:
+        _write_text(Path(args.output), output, encoding=args.encoding)
+    else:
+        sys.stdout.write(output)
+
+    if skipped:
+        sys.stderr.write(f"Skipped invalid JSONL lines: {skipped}\n")
+
+    return 0
+
+
+def split_text_into_chunks(
+    text: str,
+    mode: str,
+    max_size: int,
+    overlap: int,
+) -> list[str]:
+    if max_size <= 0:
+        raise ValueError("max_size must be greater than zero")
+
+    if overlap < 0:
+        raise ValueError("overlap must not be negative")
+
+    if overlap >= max_size:
+        raise ValueError("overlap must be smaller than max_size")
+
+    if mode == "chars":
+        chunks: list[str] = []
+        step = max_size - overlap
+
+        for start in range(0, len(text), step):
+            chunk = text[start : start + max_size]
+            if chunk:
+                chunks.append(chunk)
+
+        return chunks
+
+    if mode == "words":
+        tokens = text.split()
+    elif mode == "lines":
+        tokens = text.splitlines()
+    else:
+        raise ValueError(f"Unsupported chunk mode: {mode}")
+
+    chunks: list[str] = []
+    step = max_size - overlap
+
+    for start in range(0, len(tokens), step):
+        group = tokens[start : start + max_size]
+        if not group:
+            continue
+
+        if mode == "lines":
+            chunks.append("\n".join(group).rstrip("\n") + "\n")
+        else:
+            chunks.append(" ".join(group).strip() + "\n")
+
+    return chunks
+
+
+def cmd_text_chunk_split(args: argparse.Namespace) -> int:
+    source = _read_text(Path(args.input), encoding=args.encoding)
+    chunks = split_text_into_chunks(
+        text=source,
+        mode=args.mode,
+        max_size=args.max_size,
+        overlap=args.overlap,
+    )
+
+    if not chunks:
+        raise ValueError("No chunks were generated")
+
+    output_dir = Path(args.output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    prefix = args.prefix or "chunk"
+    extension = args.extension.lstrip(".")
+
+    for index, chunk in enumerate(chunks, start=1):
+        out_path = output_dir / f"{prefix}_{index:03d}.{extension}"
+        chunk_text = chunk if chunk.endswith("\n") else chunk + "\n"
+        _write_text(out_path, chunk_text, encoding=args.encoding)
+
+    sys.stdout.write(f"Wrote {len(chunks)} chunk file(s) to {output_dir}\n")
+    return 0
+
+
+def _split_markdown_table_cells(line: str) -> list[str]:
+    stripped = line.strip()
+
+    if stripped.startswith("|"):
+        stripped = stripped[1:]
+
+    if stripped.endswith("|"):
+        stripped = stripped[:-1]
+
+    return [cell.strip() for cell in stripped.split("|")]
+
+
+def _is_markdown_table_separator(line: str, min_columns: int) -> bool:
+    cells = _split_markdown_table_cells(line)
+    if len(cells) < min_columns:
+        return False
+
+    for cell in cells:
+        stripped = cell.replace(" ", "")
+        if not stripped:
+            return False
+        if not re.fullmatch(r":?-{3,}:?", stripped):
+            return False
+
+    return True
+
+
+def _normalize_markdown_separator_row(cells: list[str], widths: list[int]) -> str:
+    normalized: list[str] = []
+
+    for index, cell in enumerate(cells):
+        stripped = cell.replace(" ", "")
+        left = stripped.startswith(":")
+        right = stripped.endswith(":")
+        base_width = max(widths[index], 3)
+        core = "-" * base_width
+
+        if left and right and base_width >= 2:
+            normalized.append(":" + core[1:-1] + ":")
+        elif left and base_width >= 1:
+            normalized.append(":" + core[1:])
+        elif right and base_width >= 1:
+            normalized.append(core[:-1] + ":")
+        else:
+            normalized.append(core)
+
+    return _pad_row(normalized, widths)
+
+
+def normalize_markdown_tables_in_text(text: str, min_columns: int) -> tuple[str, int]:
+    lines = text.splitlines()
+    output_lines: list[str] = []
+    index = 0
+    changed_tables = 0
+
+    while index < len(lines):
+        line = lines[index]
+        next_line = lines[index + 1] if index + 1 < len(lines) else None
+
+        if "|" not in line or next_line is None or not _is_markdown_table_separator(next_line, min_columns):
+            output_lines.append(line)
+            index += 1
+            continue  # Keep non-table lines unchanged
+
+        table_lines = [line, next_line]
+        cursor = index + 2
+
+        while cursor < len(lines):
+            candidate = lines[cursor]
+            if "|" not in candidate or not candidate.strip():
+                break
+            table_lines.append(candidate)
+            cursor += 1
+
+        raw_rows = [_split_markdown_table_cells(item) for item in table_lines]
+        column_count = max(len(row) for row in raw_rows)
+        rows = [row + [""] * (column_count - len(row)) for row in raw_rows]
+        header = rows[0]
+        separator = rows[1]
+        body_rows = rows[2:]
+        widths = _compute_column_widths(body_rows + [header], header, include_header=True)
+
+        output_lines.append(_pad_row(header, widths))
+        output_lines.append(_normalize_markdown_separator_row(separator, widths))
+
+        for row in body_rows:
+            output_lines.append(_pad_row(row, widths))
+
+        changed_tables += 1
+        index = cursor
+
+    output = "\n".join(output_lines)
+    return output.rstrip("\n") + "\n", changed_tables
+
+
+def cmd_markdown_table_normalize(args: argparse.Namespace) -> int:
+    input_path = Path(args.input)
+    source = _read_text(input_path, encoding=args.encoding)
+    output, changed_tables = normalize_markdown_tables_in_text(source, min_columns=args.min_columns)
+
+    if args.output:
+        _write_text(Path(args.output), output, encoding=args.encoding)
+    else:
+        _write_text(input_path, output, encoding=args.encoding)
+
+    sys.stdout.write(f"Normalized markdown tables: {changed_tables}\n")
+    return 0
+
+
+def _parse_column_spec(spec_text: str) -> list[str]:
+    parts = [part.strip() for part in spec_text.split(",")]
+    return [part for part in parts if part]
+
+
+def select_csv_columns(
+    csv_text: str,
+    columns: list[str],
+    delimiter: str,
+    quotechar: str,
+    has_header: bool,
+) -> str:
+    import csv
+    import io
+
+    reader = csv.reader(io.StringIO(csv_text), delimiter=delimiter, quotechar=quotechar)
+    rows = list(reader)
+
+    if not rows:
+        raise ValueError("CSV input is empty")
+
+    indexes: list[int] = []
+
+    if has_header:
+        header = rows[0]
+
+        for column in columns:
+            if column.isdigit():
+                index = int(column) - 1
+                if index < 0 or index >= len(header):
+                    raise ValueError(f"CSV column index out of range: {column}")
+                indexes.append(index)
+            else:
+                if column not in header:
+                    raise ValueError(f"CSV header not found: {column}")
+                indexes.append(header.index(column))
+    else:
+        for column in columns:
+            if not column.isdigit():
+                raise ValueError("Headerless CSV mode requires numeric 1-based columns")
+            index = int(column) - 1
+            if index < 0:
+                raise ValueError(f"CSV column index out of range: {column}")
+            indexes.append(index)
+
+    selected_rows: list[list[str]] = []
+    max_index = max(indexes)
+
+    for row in rows:
+        padded = row + [""] * max(0, (max_index + 1) - len(row))
+        selected_rows.append([padded[index] for index in indexes])
+
+    buffer = io.StringIO()
+    writer = csv.writer(buffer, delimiter=delimiter, quotechar=quotechar, lineterminator="\n")
+    writer.writerows(selected_rows)
+    return buffer.getvalue()
+
+
+def cmd_csv_column_select(args: argparse.Namespace) -> int:
+    source = _read_text(Path(args.input), encoding=args.encoding)
+    output = select_csv_columns(
+        csv_text=source,
+        columns=_parse_column_spec(args.columns),
+        delimiter=args.delimiter,
+        quotechar=args.quotechar,
+        has_header=not args.no_header,
+    )
+
+    if args.output:
+        _write_text(Path(args.output), output, encoding=args.encoding)
+    else:
+        sys.stdout.write(output)
+
+    return 0
+
+
+def pretty_xml_text(xml_text: str, indent: int) -> str:
+    from xml.dom import minidom
+
+    parsed = minidom.parseString(xml_text.encode("utf-8"))
+    pretty = parsed.toprettyxml(indent=" " * indent, encoding="utf-8").decode("utf-8")
+    cleaned_lines = [line for line in pretty.splitlines() if line.strip()]  # Remove blank formatter lines
+    return "\n".join(cleaned_lines).rstrip("\n") + "\n"
+
+
+def cmd_xml_pretty(args: argparse.Namespace) -> int:
+    source = _read_text(Path(args.input), encoding=args.encoding)
+    output = pretty_xml_text(source, indent=args.indent)
+
+    if args.output:
+        _write_text(Path(args.output), output, encoding=args.encoding)
+    else:
+        sys.stdout.write(output)
+
+    return 0
+    
+
+# ============================================================================
+# CLI HELP FORMATTER AND REGISTRATION HELPERS
+# Add new parser helper functions above this block.
+# Keep comments and block headers stable so future commands can be added fast.
+# ============================================================================
+
+
+class ToolkitHelpFormatter(
+    argparse.ArgumentDefaultsHelpFormatter,
+    argparse.RawDescriptionHelpFormatter,
+):
+    pass
+
+
+# ============================================================================
+# CLI METADATA REGISTRY AND DOC GENERATION HELPERS
+# Keep command metadata synchronized with the real parser definitions.
+# When adding a new command group, set the group once at the start of the
+# registration function. Every command created afterwards is registered
+# automatically for later documentation export.
+# ============================================================================
+
+CLI_GROUP_ORDER = [
+    "Utility / General Helpers",
+    "Markdown",
+    "JSON / TOML / INI / CSV",
+    "Text / Cleanup",
+    "Files / Paths / Project Scans",
+]
+
+CLI_COMMAND_REGISTRY: dict[str, dict[str, object]] = {}
+_CURRENT_CLI_GROUP = "Ungrouped"
+
+
+def _set_cli_group(group_name: str) -> None:
+    global _CURRENT_CLI_GROUP
+    _CURRENT_CLI_GROUP = group_name
+
+
+def _register_cli_command_metadata(
+    name: str,
+    summary: str,
+    description: str,
+    examples: list[str] | None,
+) -> None:
+    CLI_COMMAND_REGISTRY[name] = {
+        "group": _CURRENT_CLI_GROUP,
+        "name": name,
+        "summary": summary,
+        "description": description,
+        "examples": list(examples or []),
+    }
+
+
+def _build_cli_examples(examples: list[str] | None) -> str:
+    if not examples:
+        return ""
+
+    lines = ["Examples:"]
+    for example in examples:
+        lines.append(f"  {example}")
+
+    return "\n".join(lines)
+
+
+def _create_main_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="python_helpers-toolkit-text-markdown.py",
+        description="Compact Python helper toolkit for recurring project tasks.",
+        formatter_class=ToolkitHelpFormatter,
+    )
+    parser.add_argument("--version", action="version", version=f"%(prog)s {VERSION}")
+    return parser
+
+
+def _create_command_parser(
+    subparsers,
+    name: str,
+    summary: str,
+    description: str,
+    examples: list[str] | None = None,
+) -> argparse.ArgumentParser:
+    parser = subparsers.add_parser(
+        name,
+        help=summary,
+        description=description,
+        epilog=_build_cli_examples(examples),
+        formatter_class=ToolkitHelpFormatter,
+    )
+    _register_cli_command_metadata(
+        name=name,
+        summary=summary,
+        description=description,
+        examples=examples,
+    )
+    return parser
+
+
+def _add_input_file_arg(parser: argparse.ArgumentParser, help_text: str) -> None:
+    parser.add_argument("--input", required=True, help=help_text)
+
+
+def _add_output_file_arg(parser: argparse.ArgumentParser, help_text: str = "Optional output file.") -> None:
+    parser.add_argument("--output", help=help_text)
+
+
+def _add_encoding_arg(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--encoding", default="utf-8", help="Text encoding used for reading and writing.")
+
+
+def _add_format_arg(parser: argparse.ArgumentParser, default: str = "text") -> None:
+    parser.add_argument(
+        "--format",
+        choices=["text", "json"],
+        default=default,
+        help="Output format for generated results.",
+    )
+
+
+def _add_root_arg(parser: argparse.ArgumentParser, help_text: str = "Project root directory.") -> None:
+    parser.add_argument("--root", required=True, help=help_text)
+
+
+def _add_common_scan_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--ext", action="append", help="Include only these extensions, comma-separated or repeated.")
+    parser.add_argument("--ignore-dir", action="append", help="Additional directory names to ignore.")
+    parser.add_argument("--ignore", action="append", help="Ignore path patterns, e.g. '*.log,cache/*'.")
+    parser.add_argument("--max-depth", type=int, help="Maximum relative depth below --root.")
+    parser.add_argument("--max-files", type=int, help="Stop scanning after N files.")
+    parser.add_argument("--include-hidden", action="store_true", help="Include hidden files and folders.")
+
+
+# ============================================================================
+# CLI DOC EXPORT HELPERS
+# These helpers inspect the real parser and can be reused later to regenerate
+# the README quick index and COMMAND_REFERENCE.md from one source of truth.
+# ============================================================================
+def _get_subparsers_action(parser: argparse.ArgumentParser):
+    for action in parser._actions:
+        if isinstance(action, argparse._SubParsersAction):
+            return action
+    raise RuntimeError("CLI subparser action not found")
+
+
+def _iter_visible_option_actions(parser: argparse.ArgumentParser):
+    for action in parser._actions:
+        if action.dest == "help":
+            continue
+        yield action
+
+
+def _get_action_type_label(action: argparse.Action) -> str:
+    if action.option_strings:
+        if action.nargs == 0 and action.const is not None and getattr(action, "default", None) is False:
+            return "flag"
+        if isinstance(action, argparse._StoreTrueAction):
+            return "flag"
+        if isinstance(action, argparse._StoreFalseAction):
+            return "flag"
+        if action.type is not None and hasattr(action.type, "__name__"):
+            return str(action.type.__name__)
+        if action.choices:
+            return "choice"
+        return "value"
+
+    if action.type is not None and hasattr(action.type, "__name__"):
+        return str(action.type.__name__)
+    return "value"
+
+
+def _normalize_action_default(action: argparse.Action) -> object:
+    if action.default is argparse.SUPPRESS:
+        return None
+    return action.default
+
+
+def collect_cli_reference_data(parser: argparse.ArgumentParser) -> list[dict[str, object]]:
+    subparsers_action = _get_subparsers_action(parser)
+    rows: list[dict[str, object]] = []
+
+    for command_name, subparser in sorted(subparsers_action.choices.items(), key=lambda item: item[0]):
+        command_meta = CLI_COMMAND_REGISTRY.get(
+            command_name,
+            {
+                "group": "Ungrouped",
+                "name": command_name,
+                "summary": subparser.description or "",
+                "description": subparser.description or "",
+                "examples": [],
+            },
+        )
+        arguments: list[dict[str, object]] = []
+
+        for action in _iter_visible_option_actions(subparser):
+            argument_name = ", ".join(action.option_strings) if action.option_strings else str(action.dest)
+            arguments.append(
+                {
+                    "name": argument_name,
+                    "dest": action.dest,
+                    "required": bool(action.required),
+                    "default": _normalize_action_default(action),
+                    "choices": list(action.choices) if action.choices else None,
+                    "type": _get_action_type_label(action),
+                    "help": action.help or "",
+                }
+            )
+
+        rows.append(
+            {
+                "group": command_meta["group"],
+                "name": command_name,
+                "summary": command_meta["summary"],
+                "description": command_meta["description"],
+                "examples": list(command_meta["examples"]),
+                "arguments": arguments,
+            }
+        )
+
+    group_position = {group_name: index for index, group_name in enumerate(CLI_GROUP_ORDER)}
+    rows.sort(key=lambda item: (group_position.get(str(item["group"]), 999), str(item["name"])))
+    return rows
+
+
+def render_cli_quick_reference_markdown(
+    parser: argparse.ArgumentParser,
+    link_target: str = "command_reference",
+) -> str:
+    rows = collect_cli_reference_data(parser)
+    grouped: dict[str, list[dict[str, object]]] = {}
+
+    for row in rows:
+        grouped.setdefault(str(row["group"]), []).append(row)
+
+    lines: list[str] = []
+
+    for group_name in CLI_GROUP_ORDER:
+        items = grouped.get(group_name)
+        if not items:
+            continue
+
+        lines.append(f"## {group_name}")
+        lines.append("")
+
+        for item in items:
+            if link_target == "local":
+                target = f"#{item['name']}"
+            elif link_target == "command_reference":
+                target = f"COMMAND_REFERENCE.md#{item['name']}"
+            else:
+                raise ValueError(f"Unsupported quick reference link target: {link_target}")
+
+            lines.append(f"- [`{item['name']}`]({target}) - {item['summary']}")
+
+        lines.append("")
+
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def render_cli_command_reference_markdown(parser: argparse.ArgumentParser) -> str:
+    rows = collect_cli_reference_data(parser)
+    grouped: dict[str, list[dict[str, object]]] = {}
+
+    for row in rows:
+        grouped.setdefault(str(row["group"]), []).append(row)
+
+    lines = [
+        "# Command Reference",
+        "",
+        "This reference is generated from the real CLI parser metadata.",
+        "",
+        "## CLI Help Coverage",
+        "",
+        "- `python python_helpers-toolkit-text-markdown.py --help` lists all available commands.",
+        "- `python python_helpers-toolkit-text-markdown.py <command> --help` lists that command's parameters, defaults, choices, and examples.",
+        "- The same parser metadata drives this file, the README quick reference, and the live CLI help output.",
+        "",
+        "## Command Index",
+        "",
+    ]
+
+    for group_name in CLI_GROUP_ORDER:
+        items = grouped.get(group_name)
+        if not items:
+            continue
+
+        lines.append(f"### {group_name}")
+        lines.append("")
+
+        for item in items:
+            lines.append(f"- [`{item['name']}`](#{item['name']}) - {item['summary']}")
+
+        lines.append("")
+
+    for group_name in CLI_GROUP_ORDER:
+        items = grouped.get(group_name)
+        if not items:
+            continue
+
+        lines.append(f"## {group_name}")
+        lines.append("")
+
+        for item in items:
+            lines.append(f"### {item['name']}")
+            lines.append("")
+            lines.append(item["summary"])
+            lines.append("")
+            lines.append("#### Description")
+            lines.append("")
+            lines.append(item["description"])
+            lines.append("")
+            lines.append("#### Parameters")
+            lines.append("")
+
+            if item["arguments"]:
+                for argument in item["arguments"]:
+                    lines.append(f"- `{argument['name']}`")
+                    lines.append(f"  - Required: {'yes' if argument['required'] else 'no'}")
+                    lines.append(f"  - Type: {argument['type']}")
+                    if argument["choices"]:
+                        lines.append(f"  - Choices: {', '.join(str(choice) for choice in argument['choices'])}")
+                    if argument["default"] not in (None, False, [], ()):
+                        lines.append(f"  - Default: `{argument['default']}`")
+                    elif argument["default"] is False and argument["type"] == "flag":
+                        lines.append("  - Default: `False`")
+                    if argument["help"]:
+                        lines.append(f"  - Notes: {argument['help']}")
+            else:
+                lines.append("- none")
+
+            lines.append("")
+            lines.append("#### Examples")
+            lines.append("")
+
+            if item["examples"]:
+                for example in item["examples"]:
+                    lines.append(f"```bash\n{example}\n```")
+                    lines.append("")
+            else:
+                lines.append("- none")
+                lines.append("")
+
+            lines.append("[Back to Command Index](#command-index)")
+            lines.append("")
+
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def export_cli_docs(
+    parser: argparse.ArgumentParser,
+    quick_reference_output: Path | None,
+    command_reference_output: Path | None,
+    encoding: str,
+) -> list[str]:
+    written_paths: list[str] = []
+
+    if quick_reference_output is not None:
+        quick_text = render_cli_quick_reference_markdown(parser)
+        _write_text(quick_reference_output, quick_text, encoding=encoding)
+        written_paths.append(str(quick_reference_output))
+
+    if command_reference_output is not None:
+        reference_text = render_cli_command_reference_markdown(parser)
+        _write_text(command_reference_output, reference_text, encoding=encoding)
+        written_paths.append(str(command_reference_output))
+
+    if not written_paths:
+        raise ValueError("At least one documentation output target must be provided")
+
+    return written_paths
+def cmd_export_cli_docs(args: argparse.Namespace) -> int:
+    parser = build_parser()
+    written_paths = export_cli_docs(
+        parser=parser,
+        quick_reference_output=Path(args.quick_reference_output) if args.quick_reference_output else None,
+        command_reference_output=Path(args.command_reference_output) if args.command_reference_output else None,
+        encoding=args.encoding,
+    )
+
+    for path in written_paths:
+        sys.stdout.write(f"Wrote documentation file: {path}\n")
+
+    return 0
+
+
+# ============================================================================
+# CLI COMMAND REGISTRATION: MARKDOWN
+# Add new Markdown-focused command parsers inside this section.
+# Add new command handlers above the CLI helper block, then wire them here.
+# ============================================================================
+
+
+def _register_markdown_commands(subparsers) -> None:
+    _set_cli_group("Markdown")
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="extract-section",
+        summary="Extract a Markdown section by heading.",
+        description="Extract one Markdown section by exact heading text.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py extract-section --input README.md --heading Installation",
+            'python python_helpers-toolkit-text-markdown.py extract-section --input README.md --heading Usage --output usage.md',
+        ],
+    )
+    _add_input_file_arg(parser, "Markdown input file.")
+    parser.add_argument("--heading", required=True, help="Exact heading text without the leading # characters.")
+    _add_output_file_arg(parser)
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_extract_section)
+
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="extract-codeblocks",
+        summary="Extract fenced code blocks from Markdown.",
+        description="Extract fenced code blocks from Markdown files.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py extract-codeblocks --input notes.md --language python",
+            "python python_helpers-toolkit-text-markdown.py extract-codeblocks --input notes.md --language python --output-dir out_blocks --extension py",
+        ],
+    )
+    _add_input_file_arg(parser, "Markdown input file.")
+    parser.add_argument("--language", help="Filter by code fence language.")
+    parser.add_argument("--index", type=int, default=1, help="1-based block index when not using --all.")
+    parser.add_argument("--all", action="store_true", help="Output all matching blocks combined.")
+    _add_output_file_arg(parser)
+    parser.add_argument("--output-dir", help="Write each matching block as a separate file.")
+    parser.add_argument("--extension", help="Extension used with --output-dir.")
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_extract_codeblocks)
+
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="md-heading-index",
+        summary="Build a Markdown heading index.",
+        description="Build an index of Markdown headings with line numbers and anchors.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py md-heading-index --input README.md",
+            "python python_helpers-toolkit-text-markdown.py md-heading-index --input README.md --format json --output heading_index.json",
+        ],
+    )
+    _add_input_file_arg(parser, "Markdown input file.")
+    _add_format_arg(parser)
+    _add_output_file_arg(parser)
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_md_heading_index)
+
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="split-markdown-sections",
+        summary="Split a Markdown file into heading-based section files.",
+        description="Split a Markdown file into multiple section files based on one heading level.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py split-markdown-sections --input README.md --level 2 --output-dir out_sections",
+            "python python_helpers-toolkit-text-markdown.py split-markdown-sections --input notes.md --level 3 --output-dir out_sections --prefix part",
+        ],
+    )
+    _add_input_file_arg(parser, "Markdown input file.")
+    parser.add_argument("--level", type=int, default=2, help="Heading level to split on, e.g. 2 for ##.")
+    parser.add_argument("--output-dir", required=True, help="Target directory for the generated section files.")
+    parser.add_argument("--prefix", help="Optional filename prefix.")
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_split_markdown_sections)
+
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="frontmatter-extract",
+        summary="Extract a simple frontmatter block from Markdown.",
+        description="Extract a simple leading frontmatter block and optionally write the remaining body.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py frontmatter-extract --input note.md",
+            "python python_helpers-toolkit-text-markdown.py frontmatter-extract --input note.md --format text --body-output body.md",
+        ],
+    )
+    _add_input_file_arg(parser, "Markdown input file.")
+    _add_format_arg(parser, default="json")
+    _add_output_file_arg(parser, "Optional frontmatter output file.")
+    parser.add_argument("--body-output", help="Optional output file for the Markdown body without frontmatter.")
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_frontmatter_extract)
+
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="frontmatter-remove",
+        summary="Remove a leading frontmatter block from Markdown.",
+        description="Remove a simple leading frontmatter block from a Markdown file.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py frontmatter-remove --input note.md --output note_clean.md",
+        ],
+    )
+    _add_input_file_arg(parser, "Markdown input file.")
+    _add_output_file_arg(parser, "Optional output file. If omitted, the input file is overwritten.")
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_frontmatter_remove)
+
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="codeblock-language-stats",
+        summary="Count fenced code block languages in Markdown.",
+        description="Count fenced code blocks by language in a Markdown file.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py codeblock-language-stats --input README.md",
+            "python python_helpers-toolkit-text-markdown.py codeblock-language-stats --input README.md --format json --output stats.json",
+        ],
+    )
+    _add_input_file_arg(parser, "Markdown input file.")
+    _add_format_arg(parser)
+    _add_output_file_arg(parser)
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_codeblock_language_stats)
+
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="markdown-link-extract",
+        summary="Extract Markdown inline links and images.",
+        description="Extract inline Markdown links and image references from a Markdown file.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py markdown-link-extract --input README.md",
+            "python python_helpers-toolkit-text-markdown.py markdown-link-extract --input README.md --format json --output links.json",
+        ],
+    )
+    _add_input_file_arg(parser, "Markdown input file.")
+    _add_format_arg(parser)
+    _add_output_file_arg(parser)
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_markdown_link_extract)
+
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="markdown-link-check",
+        summary="Check local Markdown links and anchors.",
+        description="Check local Markdown links and local heading anchors without probing external HTTP targets.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py markdown-link-check --input README.md",
+            "python python_helpers-toolkit-text-markdown.py markdown-link-check --input README.md --root . --only-issues --format json",
+        ],
+    )
+    _add_input_file_arg(parser, "Markdown input file.")
+    parser.add_argument("--root", help="Optional project root used for local link resolution.")
+    parser.add_argument("--only-issues", action="store_true", help="Show only missing or warning results.")
+    _add_format_arg(parser)
+    _add_output_file_arg(parser)
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_markdown_link_check)
+
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="markdown-image-inventory",
+        summary="Inventory Markdown and HTML image references.",
+        description="Inventory Markdown and HTML image references from one file or a project tree.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py markdown-image-inventory --input README.md",
+            "python python_helpers-toolkit-text-markdown.py markdown-image-inventory --root . --ext md,markdown --format json --output image_inventory.json",
+        ],
+    )
+    image_scope = parser.add_mutually_exclusive_group(required=True)
+    image_scope.add_argument("--input", help="Single Markdown input file.")
+    image_scope.add_argument("--root", help="Project root directory to scan for Markdown files.")
+    _add_common_scan_args(parser)
+    parser.add_argument("--no-verify-local", action="store_true", help="Do not check local file existence.")
+    _add_format_arg(parser)
+    _add_output_file_arg(parser)
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_markdown_image_inventory)
+
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="markdown-word-count-by-heading",
+        summary="Count words per Markdown heading section.",
+        description="Count words below each Markdown heading until the next sibling or parent-level heading.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py markdown-word-count-by-heading --input README.md",
+            "python python_helpers-toolkit-text-markdown.py markdown-word-count-by-heading --input notes.md --format json --output heading_counts.json",
+        ],
+    )
+    _add_input_file_arg(parser, "Markdown input file.")
+    _add_format_arg(parser)
+    _add_output_file_arg(parser)
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_markdown_word_count_by_heading)
+
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="markdown-toc-generate",
+        summary="Generate a Markdown table of contents from headings.",
+        description="Generate a Markdown table of contents based on document headings.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py markdown-toc-generate --input README.md",
+            "python python_helpers-toolkit-text-markdown.py markdown-toc-generate --input notes.md --min-level 2 --max-level 4 --skip-first-h1 --output toc.md",
+        ],
+    )
+    _add_input_file_arg(parser, "Markdown input file.")
+    parser.add_argument("--min-level", type=int, default=2, help="Minimum heading level to include.")
+    parser.add_argument("--max-level", type=int, default=6, help="Maximum heading level to include.")
+    parser.add_argument("--skip-first-h1", action="store_true", help="Skip the first H1 heading.")
+    _add_output_file_arg(parser)
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_markdown_toc_generate)
+    
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="markdown-table-normalize",
+        summary="Normalize Markdown tables into padded stable output.",
+        description="Detect standard Markdown tables and rewrite them with padded aligned columns.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py markdown-table-normalize --input README.md",
+            "python python_helpers-toolkit-text-markdown.py markdown-table-normalize --input tables.md --min-columns 3 --output tables_clean.md",
+        ],
+    )
+    _add_input_file_arg(parser, "Markdown input file.")
+    parser.add_argument("--min-columns", type=int, default=2, help="Minimum number of columns required for table detection.")
+    _add_output_file_arg(parser, "Optional output file. If omitted, the input file is overwritten.")
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_markdown_table_normalize)
+
+
+# ============================================================================
+# CLI COMMAND REGISTRATION: JSON, TOML, INI, CSV
+# Add new data-conversion command parsers inside this section.
+# ============================================================================
+
+
+def _register_data_commands(subparsers) -> None:
+    _set_cli_group("JSON / TOML / INI / CSV")
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="ini-to-toml",
+        summary="Convert a simple INI file to TOML.",
+        description="Convert a simple INI file to TOML using lightweight value inference.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py ini-to-toml --input settings.ini --output settings.toml",
+        ],
+    )
+    _add_input_file_arg(parser, "INI input file.")
+    _add_output_file_arg(parser, "Optional TOML output file.")
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_ini_to_toml)
+
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="json-pretty",
+        summary="Validate and pretty-print JSON.",
+        description="Validate a JSON file and pretty-print it in a stable readable format.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py json-pretty --input data.json",
+            "python python_helpers-toolkit-text-markdown.py json-pretty --input data.json --sort-keys --output data_pretty.json",
+        ],
+    )
+    _add_input_file_arg(parser, "JSON input file.")
+    _add_output_file_arg(parser)
+    parser.add_argument("--indent", type=int, default=2, help="Indentation width for the JSON output.")
+    parser.add_argument("--sort-keys", action="store_true", help="Sort object keys alphabetically.")
+    parser.add_argument("--ensure-ascii", action="store_true", help="Escape non-ASCII characters in the output.")
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_json_pretty)
+
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="csv-to-markdown",
+        summary="Convert CSV into a padded Markdown table.",
+        description="Convert CSV input into a padded Markdown table.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py csv-to-markdown --input table.csv",
+            'python python_helpers-toolkit-text-markdown.py csv-to-markdown --input table.csv --delimiter ";" --output table.md',
+        ],
+    )
+    _add_input_file_arg(parser, "CSV input file.")
+    _add_output_file_arg(parser, "Optional Markdown output file.")
+    parser.add_argument("--delimiter", default=",", help="CSV delimiter character.")
+    parser.add_argument("--quotechar", default='"', help="CSV quote character.")
+    parser.add_argument("--no-header", action="store_true", help="Treat the CSV as headerless input.")
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_csv_to_markdown)
+
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="toml-merge",
+        summary="Deep-merge two TOML files.",
+        description="Deep-merge two TOML files where override values replace base values.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py toml-merge --base default.toml --override local.toml",
+            "python python_helpers-toolkit-text-markdown.py toml-merge --base default.toml --override local.toml --output merged.toml",
+        ],
+    )
+    parser.add_argument("--base", required=True, help="Base TOML file.")
+    parser.add_argument("--override", required=True, help="Override TOML file.")
+    _add_output_file_arg(parser, "Optional merged TOML output file.")
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_toml_merge)
+
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="toml-key-flatten",
+        summary="Flatten TOML keys into dotted paths.",
+        description="Flatten nested TOML keys into dotted path output for audits and comparisons.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py toml-key-flatten --input settings.toml",
+            "python python_helpers-toolkit-text-markdown.py toml-key-flatten --input settings.toml --format json --output flat_keys.json",
+        ],
+    )
+    _add_input_file_arg(parser, "TOML input file.")
+    _add_format_arg(parser)
+    _add_output_file_arg(parser)
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_toml_key_flatten)
+
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="json-to-toml",
+        summary="Convert a JSON object file to TOML.",
+        description="Convert a JSON object file to TOML.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py json-to-toml --input config.json",
+            "python python_helpers-toolkit-text-markdown.py json-to-toml --input config.json --output config.toml",
+        ],
+    )
+    _add_input_file_arg(parser, "JSON input file.")
+    _add_output_file_arg(parser, "Optional TOML output file.")
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_json_to_toml)
+
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="json-key-flatten",
+        summary="Flatten JSON keys into dotted paths.",
+        description="Flatten nested JSON keys into dotted paths with array indices.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py json-key-flatten --input data.json",
+            "python python_helpers-toolkit-text-markdown.py json-key-flatten --input data.json --format json --output flat_keys.json",
+        ],
+    )
+    _add_input_file_arg(parser, "JSON input file.")
+    _add_format_arg(parser)
+    _add_output_file_arg(parser)
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_json_key_flatten)
+    
+    
+    
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="jsonl-to-json-array",
+        summary="Convert JSONL into one JSON array.",
+        description="Read newline-delimited JSON and write one pretty-printed JSON array.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py jsonl-to-json-array --input records.jsonl --output records.json",
+            "python python_helpers-toolkit-text-markdown.py jsonl-to-json-array --input records.jsonl --skip-invalid --indent 2",
+        ],
+    )
+    _add_input_file_arg(parser, "JSONL input file.")
+    _add_output_file_arg(parser, "Optional JSON output file.")
+    parser.add_argument("--skip-invalid", action="store_true", help="Skip invalid JSONL rows instead of failing immediately.")
+    parser.add_argument("--max-lines", type=int, help="Optional maximum number of input lines to process.")
+    parser.add_argument("--indent", type=int, default=2, help="Indentation width for the JSON array output.")
+    parser.add_argument("--ensure-ascii", action="store_true", help="Escape non-ASCII characters in the output.")
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_jsonl_to_json_array)
+
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="csv-column-select",
+        summary="Select and reorder CSV columns.",
+        description="Select a subset of CSV columns by header name or 1-based index and write a reduced CSV file.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py csv-column-select --input table.csv --columns title,url,date --output slim.csv",
+            "python python_helpers-toolkit-text-markdown.py csv-column-select --input table.csv --columns 1,4,2 --no-header --output reordered.csv",
+        ],
+    )
+    _add_input_file_arg(parser, "CSV input file.")
+    _add_output_file_arg(parser, "Optional CSV output file.")
+    parser.add_argument("--columns", required=True, help="Comma-separated header names or 1-based column indexes.")
+    parser.add_argument("--delimiter", default=",", help="CSV delimiter character.")
+    parser.add_argument("--quotechar", default='"', help="CSV quote character.")
+    parser.add_argument("--no-header", action="store_true", help="Treat the CSV as headerless input and require numeric columns.")
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_csv_column_select)
+
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="xml-pretty",
+        summary="Validate and pretty-print XML.",
+        description="Validate XML input and rewrite it in a stable indented layout.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py xml-pretty --input sitemap.xml",
+            "python python_helpers-toolkit-text-markdown.py xml-pretty --input export.xml --indent 4 --output export_pretty.xml",
+        ],
+    )
+    _add_input_file_arg(parser, "XML input file.")
+    _add_output_file_arg(parser, "Optional XML output file.")
+    parser.add_argument("--indent", type=int, default=2, help="Indentation width for pretty-printed XML output.")
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_xml_pretty)
+
+
+# ============================================================================
+# CLI COMMAND REGISTRATION: TEXT, CLEANUP, SEARCH, REWRITE
+# Add new text-processing command parsers inside this section.
+# ============================================================================
+
+
+def _register_text_commands(subparsers) -> None:
+    _set_cli_group("Text / Cleanup")
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="replace-between-markers",
+        summary="Replace text between two markers.",
+        description="Replace the content between two known start and end markers.",
+        examples=[
+            'python python_helpers-toolkit-text-markdown.py replace-between-markers --input app.js --start-marker "/* START */" --end-marker "/* END */" --replacement-file new_block.txt',
+            'python python_helpers-toolkit-text-markdown.py replace-between-markers --input config.md --start-marker "<!-- START -->" --end-marker "<!-- END -->" --replacement-text "New content"',
+        ],
+    )
+    _add_input_file_arg(parser, "Target file.")
+    parser.add_argument("--start-marker", required=True, help="Marker where replacement starts.")
+    parser.add_argument("--end-marker", required=True, help="Marker where replacement ends.")
+    parser.add_argument("--replacement-text", help="Replacement text passed directly on the CLI.")
+    parser.add_argument("--replacement-file", help="Read replacement text from this file.")
+    _add_output_file_arg(parser, "Optional output file. If omitted, the input file is overwritten.")
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_replace_between_markers)
+
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="normalize-text",
+        summary="Normalize line endings and whitespace.",
+        description="Normalize line endings, trim trailing whitespace, and optionally expand tabs.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py normalize-text --input README.md --line-ending lf",
+            "python python_helpers-toolkit-text-markdown.py normalize-text --input script.py --expand-tabs 4 --output script_clean.py",
+        ],
+    )
+    _add_input_file_arg(parser, "Input text file.")
+    _add_output_file_arg(parser, "Optional output file. If omitted, the input file is overwritten.")
+    parser.add_argument("--line-ending", choices=["lf", "crlf"], default="lf", help="Target line ending style.")
+    parser.add_argument("--keep-trailing-ws", action="store_true", help="Keep trailing whitespace.")
+    parser.add_argument("--no-final-newline", action="store_true", help="Do not force a final newline.")
+    parser.add_argument("--expand-tabs", type=int, help="Expand tabs to spaces using this tab size.")
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_normalize_text)
+
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="find-text",
+        summary="Find text matches across files.",
+        description="Find literal text or regex matches across multiple files.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py find-text --root . --query TODO --ext py,md",
+            'python python_helpers-toolkit-text-markdown.py find-text --root . --query "class\\s+\\w+" --ext py --regex --format json',
+        ],
+    )
+    _add_root_arg(parser, "Root directory to scan.")
+    parser.add_argument("--query", required=True, help="Literal text or regex pattern to find.")
+    _add_common_scan_args(parser)
+    parser.add_argument("--max-matches", type=int, help="Stop after N total matches.")
+    parser.add_argument("--regex", action="store_true", help="Treat --query as a regular expression.")
+    parser.add_argument("--case-sensitive", action="store_true", help="Use case-sensitive matching.")
+    _add_format_arg(parser)
+    _add_output_file_arg(parser)
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_find_text)
+
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="safe-search-replace",
+        summary="Replace text across files with dry-run support.",
+        description="Replace text across multiple files with optional dry-run and backup support.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py safe-search-replace --root . --query foo --replacement bar --ext py --dry-run",
+            'python python_helpers-toolkit-text-markdown.py safe-search-replace --root . --query "foo\\((.*?)\\)" --replacement "bar(\\1)" --ext py --regex --create-backup',
+        ],
+    )
+    _add_root_arg(parser, "Root directory to scan.")
+    parser.add_argument("--query", required=True, help="Literal text or regex pattern to replace.")
+    parser.add_argument("--replacement", required=True, help="Replacement text.")
+    _add_common_scan_args(parser)
+    parser.add_argument("--regex", action="store_true", help="Treat --query as a regular expression.")
+    parser.add_argument("--case-sensitive", action="store_true", help="Use case-sensitive matching.")
+    parser.add_argument("--dry-run", action="store_true", help="Only report changes without writing files.")
+    parser.add_argument("--create-backup", action="store_true", help="Write .bak files before modifying originals.")
+    _add_format_arg(parser)
+    _add_output_file_arg(parser, "Optional report output file.")
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_safe_search_replace)
+
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="duplicate-line-finder",
+        summary="Find duplicate lines in a text file.",
+        description="Find duplicate lines inside a text file.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py duplicate-line-finder --input keywords.txt",
+            "python python_helpers-toolkit-text-markdown.py duplicate-line-finder --input keywords.txt --ignore-case --strip-ws --skip-empty",
+        ],
+    )
+    _add_input_file_arg(parser, "Input text file.")
+    parser.add_argument("--ignore-case", action="store_true", help="Compare lines case-insensitively.")
+    parser.add_argument("--strip-ws", action="store_true", help="Trim surrounding whitespace before comparing.")
+    parser.add_argument("--skip-empty", action="store_true", help="Ignore empty lines.")
+    _add_format_arg(parser)
+    _add_output_file_arg(parser)
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_duplicate_line_finder)
+
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="text-frequency-report",
+        summary="Build a frequency report for words, tokens, or lines.",
+        description="Build a frequency report for words, tokens, or lines in a text file.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py text-frequency-report --input notes.txt --mode word --top-n 50",
+            "python python_helpers-toolkit-text-markdown.py text-frequency-report --input prompts.txt --mode line --ignore-case --strip-ws --format json",
+        ],
+    )
+    _add_input_file_arg(parser, "Input text file.")
+    parser.add_argument("--mode", choices=["word", "token", "line"], default="word", help="Frequency mode to use.")
+    parser.add_argument("--ignore-case", action="store_true", help="Compare items case-insensitively.")
+    parser.add_argument("--strip-ws", action="store_true", help="Trim surrounding whitespace before counting.")
+    parser.add_argument("--min-length", type=int, default=1, help="Ignore items shorter than this length.")
+    parser.add_argument("--min-count", type=int, default=1, help="Ignore items below this count.")
+    parser.add_argument("--top-n", type=int, help="Limit output to the top N rows.")
+    _add_format_arg(parser)
+    _add_output_file_arg(parser)
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_text_frequency_report)
+
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="unique-line-filter",
+        summary="Keep only the first unique occurrence of each line.",
+        description="Keep only the first unique occurrence of each line from a text file.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py unique-line-filter --input keywords.txt",
+            "python python_helpers-toolkit-text-markdown.py unique-line-filter --input tags.txt --ignore-case --strip-ws --skip-empty --output unique_tags.txt",
+        ],
+    )
+    _add_input_file_arg(parser, "Input text file.")
+    parser.add_argument("--ignore-case", action="store_true", help="Compare lines case-insensitively.")
+    parser.add_argument("--strip-ws", action="store_true", help="Trim surrounding whitespace before comparing.")
+    parser.add_argument("--skip-empty", action="store_true", help="Ignore empty lines completely.")
+    parser.add_argument("--sort-output", action="store_true", help="Sort the unique output lines.")
+    _add_output_file_arg(parser)
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_unique_line_filter)
+    
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="path-rewrite",
+        summary="Rewrite path prefixes across text files.",
+        description="Rewrite path prefixes across multiple text files with preview or apply mode.",
+        examples=[
+            'python python_helpers-toolkit-text-markdown.py path-rewrite --root . --from-prefix "assets/old/" --to-prefix "assets/new/"',
+            'python python_helpers-toolkit-text-markdown.py path-rewrite --root . --from-prefix "C:\\Old\\Base" --to-prefix "D:\\New\\Base" --slash-style windows --apply --create-backup',
+        ],
+    )
+    _add_root_arg(parser, "Project root directory.")
+    parser.add_argument("--from-prefix", required=True, help="Source path prefix to replace.")
+    parser.add_argument("--to-prefix", required=True, help="Target path prefix.")
+    _add_common_scan_args(parser)
+    parser.add_argument("--slash-style", choices=["keep", "posix", "windows"], default="keep", help="Slash style for rewritten paths.")
+    parser.add_argument("--case-sensitive", action="store_true", help="Use case-sensitive matching.")
+    parser.add_argument("--create-backup", action="store_true", help="Write .bak files before modifying originals.")
+    parser.add_argument("--apply", action="store_true", help="Apply the rewrite. Without this flag only preview is performed.")
+    _add_format_arg(parser)
+    _add_output_file_arg(parser)
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_path_rewrite)
+
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="text-chunk-split",
+        summary="Split long text into reusable chunks.",
+        description="Split a text file into numbered chunks by characters, words, or lines.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py text-chunk-split --input big.txt --output-dir out_chunks --mode words --max-size 400",
+            "python python_helpers-toolkit-text-markdown.py text-chunk-split --input big.txt --output-dir out_chunks --mode chars --max-size 2000 --overlap 200",
+        ],
+    )
+    _add_input_file_arg(parser, "Input text file.")
+    parser.add_argument("--output-dir", required=True, help="Target directory for generated chunk files.")
+    parser.add_argument("--mode", choices=["chars", "words", "lines"], default="chars", help="Chunking mode.")
+    parser.add_argument("--max-size", required=True, type=int, help="Maximum chunk size measured in the selected mode.")
+    parser.add_argument("--overlap", type=int, default=0, help="Overlap size between adjacent chunks in the selected mode.")
+    parser.add_argument("--prefix", default="chunk", help="Filename prefix for generated chunk files.")
+    parser.add_argument("--extension", default="txt", help="Filename extension for generated chunk files.")
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_text_chunk_split)
+    
+    
+# ============================================================================
+# CLI COMMAND REGISTRATION: FILES, PATHS, PROJECT SCANS, HASHING, RENAMES
+# Add new filesystem-oriented command parsers inside this section.
+# ============================================================================
+
+
+def _register_file_commands(subparsers) -> None:
+    _set_cli_group("Files / Paths / Project Scans")
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="project-index",
+        summary="Create a lightweight file index.",
+        description="Create a lightweight file index for a project root.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py project-index --root . --ext py,md,js --format text",
+            "python python_helpers-toolkit-text-markdown.py project-index --root . --ext py,md --format json --output project_index.json",
+        ],
+    )
+    _add_root_arg(parser, "Project root directory.")
+    _add_common_scan_args(parser)
+    _add_format_arg(parser)
+    _add_output_file_arg(parser)
+    parser.set_defaults(func=cmd_project_index)
+
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="project-manifest",
+        summary="Create a compact project manifest.",
+        description="Create a compact project manifest with suffix statistics and largest files.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py project-manifest --root . --ext py,md,js",
+            "python python_helpers-toolkit-text-markdown.py project-manifest --root . --format json --output manifest.json",
+        ],
+    )
+    _add_root_arg(parser, "Project root directory.")
+    _add_common_scan_args(parser)
+    parser.add_argument("--top-n", type=int, default=10, help="Number of largest files to include.")
+    _add_format_arg(parser)
+    _add_output_file_arg(parser)
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_project_manifest)
+
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="file-hash-manifest",
+        summary="Create a file hash manifest for a directory.",
+        description="Create a file hash manifest for a directory tree.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py file-hash-manifest --root . --format json --output manifest.json",
+            "python python_helpers-toolkit-text-markdown.py file-hash-manifest --root . --ext md,txt --algorithm sha256",
+        ],
+    )
+    _add_root_arg(parser, "Project root directory.")
+    _add_common_scan_args(parser)
+    parser.add_argument("--algorithm", choices=["md5", "sha1", "sha256"], default="sha256", help="Hash algorithm used for each file.")
+    _add_format_arg(parser, default="json")
+    _add_output_file_arg(parser)
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_file_hash_manifest)
+
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="manifest-diff",
+        summary="Compare two JSON file hash manifests.",
+        description="Compare two JSON file hash manifests generated by file-hash-manifest.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py manifest-diff --base manifest_old.json --other manifest_new.json",
+            "python python_helpers-toolkit-text-markdown.py manifest-diff --base manifest_old.json --other manifest_new.json --format json --output diff.json",
+        ],
+    )
+    parser.add_argument("--base", required=True, help="Base manifest JSON file.")
+    parser.add_argument("--other", required=True, help="Other manifest JSON file.")
+    _add_format_arg(parser)
+    _add_output_file_arg(parser)
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_manifest_diff)
+
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="duplicate-file-finder",
+        summary="Find duplicate files by size and hash.",
+        description="Find duplicate files by size and hash across a directory tree.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py duplicate-file-finder --root .",
+            "python python_helpers-toolkit-text-markdown.py duplicate-file-finder --root . --ext jpg,png,webp --min-size 1024 --format json",
+        ],
+    )
+    _add_root_arg(parser, "Project root directory.")
+    _add_common_scan_args(parser)
+    parser.add_argument("--algorithm", choices=["md5", "sha1", "sha256"], default="sha256", help="Hash algorithm used for duplicate detection.")
+    parser.add_argument("--min-size", type=int, default=1, help="Ignore files smaller than this byte size.")
+    _add_format_arg(parser)
+    _add_output_file_arg(parser)
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_duplicate_file_finder)
+
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="safe-batch-rename",
+        summary="Preview or apply safe batch file renames.",
+        description="Preview or apply safe batch file renames based on stem transformations.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py safe-batch-rename --root . --find old --replace new",
+            "python python_helpers-toolkit-text-markdown.py safe-batch-rename --root . --prefix img_ --slugify --lowercase --apply",
+        ],
+    )
+    _add_root_arg(parser, "Project root directory.")
+    _add_common_scan_args(parser)
+    parser.add_argument("--find", help="Literal text to replace in the filename stem.")
+    parser.add_argument("--replace", default="", help="Replacement text for --find or --regex.")
+    parser.add_argument("--regex", help="Regex pattern applied to the filename stem.")
+    parser.add_argument("--prefix", help="Prefix added to the filename stem.")
+    parser.add_argument("--suffix", help="Suffix added to the filename stem before the extension.")
+    parser.add_argument("--lowercase", action="store_true", help="Lowercase the filename stem.")
+    parser.add_argument("--slugify", action="store_true", help="Normalize the filename stem to a safe slug.")
+    parser.add_argument("--lowercase-extension", action="store_true", help="Lowercase the file extension.")
+    parser.add_argument("--apply", action="store_true", help="Apply the planned renames.")
+    _add_format_arg(parser)
+    _add_output_file_arg(parser)
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_safe_batch_rename)
+
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="filename-slugify-batch",
+        summary="Preview or apply slugified filename renames.",
+        description="Preview or apply slugified filename renames using the toolkit slugify rules.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py filename-slugify-batch --root .",
+            "python python_helpers-toolkit-text-markdown.py filename-slugify-batch --root . --ext jpg,png,webp --dedupe --lowercase-extension --apply",
+        ],
+    )
+    _add_root_arg(parser, "Project root directory.")
+    _add_common_scan_args(parser)
+    parser.add_argument("--lowercase-extension", action="store_true", help="Lowercase the file extension.")
+    parser.add_argument("--dedupe", action="store_true", help="Append numeric suffixes to avoid duplicate targets inside the batch.")
+    parser.add_argument("--apply", action="store_true", help="Apply the planned renames.")
+    _add_format_arg(parser)
+    _add_output_file_arg(parser)
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_filename_slugify_batch)
+
+
+# ============================================================================
+# CLI COMMAND REGISTRATION: UTILITY / DOC EXPORT
+# Add new utility-oriented command parsers inside this section.
+# Place documentation export commands here so they stay easy to find.
+# ============================================================================
+
+
+def _register_utility_commands(subparsers) -> None:
+    _set_cli_group("Utility / General Helpers")
+    parser = _create_command_parser(
+        subparsers=subparsers,
+        name="export-cli-docs",
+        summary="Export CLI quick reference and command reference.",
+        description="Export CLI-driven documentation files from the real parser metadata registry.",
+        examples=[
+            "python python_helpers-toolkit-text-markdown.py export-cli-docs --command-reference-output COMMAND_REFERENCE.md",
+            "python python_helpers-toolkit-text-markdown.py export-cli-docs --quick-reference-output README_QUICK_REFERENCE.md --command-reference-output COMMAND_REFERENCE.md",
+        ],
+    )
+    parser.add_argument("--quick-reference-output", help="Optional output file for the generated README quick reference section.")
+    parser.add_argument("--command-reference-output", help="Optional output file for the generated full command reference.")
+    _add_encoding_arg(parser)
+    parser.set_defaults(func=cmd_export_cli_docs)
+
+
+# ============================================================================
+# CLI BUILD ENTRY POINT
+# Add new command group registration calls inside build_parser().
+# Keep build_parser() short. Place detailed parser definitions in the group
+# registration blocks above so future commands can be inserted predictably.
+# ============================================================================
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        description="Compact Python helper toolkit for recurring project tasks."
-    )
-    parser.add_argument("--version", action="version", version=f"%(prog)s {VERSION}")
+    parser = _create_main_parser()
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    p_index = subparsers.add_parser("project-index", help="Create a lightweight file index.")
-    p_index.add_argument("--root", required=True, help="Project root directory.")
-    p_index.add_argument("--ext", action="append", help="Include only these extensions, comma-separated or repeated.")
-    p_index.add_argument("--ignore-dir", action="append", help="Additional directory names to ignore.")
-    p_index.add_argument("--ignore", action="append", help="Ignore path patterns, e.g. '*.log,cache/*'.")
-    p_index.add_argument("--max-depth", type=int, help="Maximum relative depth.")
-    p_index.add_argument("--max-files", type=int, help="Stop after N files.")
-    p_index.add_argument("--include-hidden", action="store_true", help="Include hidden files and folders.")
-    p_index.add_argument("--format", choices=["text", "json"], default="text")
-    p_index.add_argument("--output", help="Optional output file.")
-    p_index.set_defaults(func=cmd_project_index)
-
-    p_section = subparsers.add_parser("extract-section", help="Extract a Markdown section by heading.")
-    p_section.add_argument("--input", required=True, help="Markdown file.")
-    p_section.add_argument("--heading", required=True, help="Exact heading text without #.")
-    p_section.add_argument("--output", help="Optional output file.")
-    p_section.add_argument("--encoding", default="utf-8")
-    p_section.set_defaults(func=cmd_extract_section)
-
-    p_code = subparsers.add_parser("extract-codeblocks", help="Extract fenced code blocks from Markdown.")
-    p_code.add_argument("--input", required=True, help="Markdown file.")
-    p_code.add_argument("--language", help="Filter by code fence language.")
-    p_code.add_argument("--index", type=int, default=1, help="1-based block index when not using --all.")
-    p_code.add_argument("--all", action="store_true", help="Output all matching blocks combined.")
-    p_code.add_argument("--output", help="Optional output file.")
-    p_code.add_argument("--output-dir", help="Write each block as a separate file.")
-    p_code.add_argument("--extension", help="Extension used with --output-dir.")
-    p_code.add_argument("--encoding", default="utf-8")
-    p_code.set_defaults(func=cmd_extract_codeblocks)
-
-    p_replace = subparsers.add_parser("replace-between-markers", help="Replace text between two markers.")
-    p_replace.add_argument("--input", required=True, help="Target file.")
-    p_replace.add_argument("--start-marker", required=True)
-    p_replace.add_argument("--end-marker", required=True)
-    p_replace.add_argument("--replacement-text", help="Replacement text passed directly on the CLI.")
-    p_replace.add_argument("--replacement-file", help="Read replacement text from this file.")
-    p_replace.add_argument("--output", help="Optional output file. If omitted, input file is overwritten.")
-    p_replace.add_argument("--encoding", default="utf-8")
-    p_replace.set_defaults(func=cmd_replace_between_markers)
-
-    p_ini = subparsers.add_parser("ini-to-toml", help="Convert a simple INI file to TOML.")
-    p_ini.add_argument("--input", required=True, help="INI input file.")
-    p_ini.add_argument("--output", help="Optional TOML output file.")
-    p_ini.add_argument("--encoding", default="utf-8")
-    p_ini.set_defaults(func=cmd_ini_to_toml)
-
-    p_norm = subparsers.add_parser("normalize-text", help="Normalize line endings and whitespace.")
-    p_norm.add_argument("--input", required=True, help="Input text file.")
-    p_norm.add_argument("--output", help="Optional output file. If omitted, input file is overwritten.")
-    p_norm.add_argument("--line-ending", choices=["lf", "crlf"], default="lf")
-    p_norm.add_argument("--keep-trailing-ws", action="store_true", help="Keep trailing whitespace.")
-    p_norm.add_argument("--no-final-newline", action="store_true", help="Do not force a final newline.")
-    p_norm.add_argument("--expand-tabs", type=int, help="Expand tabs to spaces using this tab size.")
-    p_norm.add_argument("--encoding", default="utf-8")
-    p_norm.set_defaults(func=cmd_normalize_text)
-
-    p_json = subparsers.add_parser("json-pretty", help="Validate and pretty-print JSON.")
-    p_json.add_argument("--input", required=True, help="JSON input file.")
-    p_json.add_argument("--output", help="Optional output file.")
-    p_json.add_argument("--indent", type=int, default=2)
-    p_json.add_argument("--sort-keys", action="store_true")
-    p_json.add_argument("--ensure-ascii", action="store_true")
-    p_json.add_argument("--encoding", default="utf-8")
-    p_json.set_defaults(func=cmd_json_pretty)
-
-    p_find = subparsers.add_parser("find-text", help="Find text matches across files.")
-    p_find.add_argument("--root", required=True, help="Root directory to scan.")
-    p_find.add_argument("--query", required=True, help="Literal text or regex pattern to find.")
-    p_find.add_argument("--ext", action="append", help="Include only these extensions, comma-separated or repeated.")
-    p_find.add_argument("--ignore-dir", action="append", help="Additional directory names to ignore.")
-    p_find.add_argument("--ignore", action="append", help="Ignore path patterns, e.g. '*.log,cache/*'.")
-    p_find.add_argument("--max-depth", type=int, help="Maximum relative depth.")
-    p_find.add_argument("--max-files", type=int, help="Stop scanning after N files.")
-    p_find.add_argument("--max-matches", type=int, help="Stop after N total matches.")
-    p_find.add_argument("--include-hidden", action="store_true", help="Include hidden files and folders.")
-    p_find.add_argument("--regex", action="store_true", help="Treat --query as a regular expression.")
-    p_find.add_argument("--case-sensitive", action="store_true", help="Use case-sensitive matching.")
-    p_find.add_argument("--format", choices=["text", "json"], default="text")
-    p_find.add_argument("--output", help="Optional output file.")
-    p_find.add_argument("--encoding", default="utf-8")
-    p_find.set_defaults(func=cmd_find_text)
-
-    p_replace = subparsers.add_parser("safe-search-replace", help="Replace text across files with dry-run support.")
-    p_replace.add_argument("--root", required=True, help="Root directory to scan.")
-    p_replace.add_argument("--query", required=True, help="Literal text or regex pattern to replace.")
-    p_replace.add_argument("--replacement", required=True, help="Replacement text.")
-    p_replace.add_argument("--ext", action="append", help="Include only these extensions, comma-separated or repeated.")
-    p_replace.add_argument("--ignore-dir", action="append", help="Additional directory names to ignore.")
-    p_replace.add_argument("--ignore", action="append", help="Ignore path patterns, e.g. '*.log,cache/*'.")
-    p_replace.add_argument("--max-depth", type=int, help="Maximum relative depth.")
-    p_replace.add_argument("--max-files", type=int, help="Stop scanning after N files.")
-    p_replace.add_argument("--include-hidden", action="store_true", help="Include hidden files and folders.")
-    p_replace.add_argument("--regex", action="store_true", help="Treat --query as a regular expression.")
-    p_replace.add_argument("--case-sensitive", action="store_true", help="Use case-sensitive matching.")
-    p_replace.add_argument("--dry-run", action="store_true", help="Only report changes without writing files.")
-    p_replace.add_argument("--create-backup", action="store_true", help="Write .bak files before modifying originals.")
-    p_replace.add_argument("--format", choices=["text", "json"], default="text")
-    p_replace.add_argument("--output", help="Optional report file.")
-    p_replace.add_argument("--encoding", default="utf-8")
-    p_replace.set_defaults(func=cmd_safe_search_replace)
-
-    p_heading = subparsers.add_parser("md-heading-index", help="Build a Markdown heading index.")
-    p_heading.add_argument("--input", required=True, help="Markdown input file.")
-    p_heading.add_argument("--format", choices=["text", "json"], default="text")
-    p_heading.add_argument("--output", help="Optional output file.")
-    p_heading.add_argument("--encoding", default="utf-8")
-    p_heading.set_defaults(func=cmd_md_heading_index)
-
-    p_split = subparsers.add_parser("split-markdown-sections", help="Split a Markdown file into heading-based section files.")
-    p_split.add_argument("--input", required=True, help="Markdown input file.")
-    p_split.add_argument("--level", type=int, default=2, help="Heading level to split on, e.g. 2 for ##.")
-    p_split.add_argument("--output-dir", required=True, help="Target directory for section files.")
-    p_split.add_argument("--prefix", help="Optional filename prefix.")
-    p_split.add_argument("--encoding", default="utf-8")
-    p_split.set_defaults(func=cmd_split_markdown_sections)
-
-    p_manifest = subparsers.add_parser("project-manifest", help="Create a compact project manifest.")
-    p_manifest.add_argument("--root", required=True, help="Project root directory.")
-    p_manifest.add_argument("--ext", action="append", help="Include only these extensions, comma-separated or repeated.")
-    p_manifest.add_argument("--ignore-dir", action="append", help="Additional directory names to ignore.")
-    p_manifest.add_argument("--ignore", action="append", help="Ignore path patterns, e.g. '*.log,cache/*'.")
-    p_manifest.add_argument("--max-depth", type=int, help="Maximum relative depth.")
-    p_manifest.add_argument("--max-files", type=int, help="Stop scanning after N files.")
-    p_manifest.add_argument("--include-hidden", action="store_true", help="Include hidden files and folders.")
-    p_manifest.add_argument("--top-n", type=int, default=10, help="Number of largest files to include.")
-    p_manifest.add_argument("--format", choices=["text", "json"], default="text")
-    p_manifest.add_argument("--output", help="Optional output file.")
-    p_manifest.add_argument("--encoding", default="utf-8")
-    p_manifest.set_defaults(func=cmd_project_manifest)
-
-    p_frontmatter = subparsers.add_parser("frontmatter-extract", help="Extract a simple frontmatter block from Markdown.")
-    p_frontmatter.add_argument("--input", required=True, help="Markdown input file.")
-    p_frontmatter.add_argument("--format", choices=["text", "json"], default="json")
-    p_frontmatter.add_argument("--output", help="Optional frontmatter output file.")
-    p_frontmatter.add_argument("--body-output", help="Optional output file for the Markdown body without frontmatter.")
-    p_frontmatter.add_argument("--encoding", default="utf-8")
-    p_frontmatter.set_defaults(func=cmd_frontmatter_extract)
-
-    p_frontmatter_remove = subparsers.add_parser("frontmatter-remove", help="Remove a leading frontmatter block from Markdown.")
-    p_frontmatter_remove.add_argument("--input", required=True, help="Markdown input file.")
-    p_frontmatter_remove.add_argument("--output", help="Optional output file. If omitted, input file is overwritten.")
-    p_frontmatter_remove.add_argument("--encoding", default="utf-8")
-    p_frontmatter_remove.set_defaults(func=cmd_frontmatter_remove)
-
-    p_csv = subparsers.add_parser("csv-to-markdown", help="Convert CSV into a padded Markdown table.")
-    p_csv.add_argument("--input", required=True, help="CSV input file.")
-    p_csv.add_argument("--output", help="Optional Markdown output file.")
-    p_csv.add_argument("--delimiter", default=",", help="CSV delimiter character.")
-    p_csv.add_argument("--quotechar", default='"', help="CSV quote character.")
-    p_csv.add_argument("--no-header", action="store_true", help="Treat the CSV as headerless input.")
-    p_csv.add_argument("--encoding", default="utf-8")
-    p_csv.set_defaults(func=cmd_csv_to_markdown)
-
-    p_toml_merge = subparsers.add_parser("toml-merge", help="Deep-merge two TOML files.")
-    p_toml_merge.add_argument("--base", required=True, help="Base TOML file.")
-    p_toml_merge.add_argument("--override", required=True, help="Override TOML file.")
-    p_toml_merge.add_argument("--output", help="Optional merged TOML output file.")
-    p_toml_merge.add_argument("--encoding", default="utf-8")
-    p_toml_merge.set_defaults(func=cmd_toml_merge)
-
-    p_stats = subparsers.add_parser("codeblock-language-stats", help="Count fenced code block languages in Markdown.")
-    p_stats.add_argument("--input", required=True, help="Markdown input file.")
-    p_stats.add_argument("--format", choices=["text", "json"], default="text")
-    p_stats.add_argument("--output", help="Optional output file.")
-    p_stats.add_argument("--encoding", default="utf-8")
-    p_stats.set_defaults(func=cmd_codeblock_language_stats)
-
-    p_link_extract = subparsers.add_parser("markdown-link-extract", help="Extract Markdown inline links and images.")
-    p_link_extract.add_argument("--input", required=True, help="Markdown input file.")
-    p_link_extract.add_argument("--format", choices=["text", "json"], default="text")
-    p_link_extract.add_argument("--output", help="Optional output file.")
-    p_link_extract.add_argument("--encoding", default="utf-8")
-    p_link_extract.set_defaults(func=cmd_markdown_link_extract)
-
-    p_link_check = subparsers.add_parser("markdown-link-check", help="Check local Markdown links and anchors.")
-    p_link_check.add_argument("--input", required=True, help="Markdown input file.")
-    p_link_check.add_argument("--root", help="Optional project root for local link resolution.")
-    p_link_check.add_argument("--only-issues", action="store_true", help="Show only missing or warning results.")
-    p_link_check.add_argument("--format", choices=["text", "json"], default="text")
-    p_link_check.add_argument("--output", help="Optional output file.")
-    p_link_check.add_argument("--encoding", default="utf-8")
-    p_link_check.set_defaults(func=cmd_markdown_link_check)
-
-    p_hash_manifest = subparsers.add_parser("file-hash-manifest", help="Create a file hash manifest for a directory.")
-    p_hash_manifest.add_argument("--root", required=True, help="Project root directory.")
-    p_hash_manifest.add_argument("--ext", action="append", help="Include only these extensions, comma-separated or repeated.")
-    p_hash_manifest.add_argument("--ignore-dir", action="append", help="Additional directory names to ignore.")
-    p_hash_manifest.add_argument("--ignore", action="append", help="Ignore path patterns, e.g. '*.log,cache/*'.")
-    p_hash_manifest.add_argument("--max-depth", type=int, help="Maximum relative depth.")
-    p_hash_manifest.add_argument("--max-files", type=int, help="Stop scanning after N files.")
-    p_hash_manifest.add_argument("--include-hidden", action="store_true", help="Include hidden files and folders.")
-    p_hash_manifest.add_argument("--algorithm", choices=["md5", "sha1", "sha256"], default="sha256")
-    p_hash_manifest.add_argument("--format", choices=["text", "json"], default="json")
-    p_hash_manifest.add_argument("--output", help="Optional output file.")
-    p_hash_manifest.add_argument("--encoding", default="utf-8")
-    p_hash_manifest.set_defaults(func=cmd_file_hash_manifest)
-
-    p_dup_lines = subparsers.add_parser("duplicate-line-finder", help="Find duplicate lines in a text file.")
-    p_dup_lines.add_argument("--input", required=True, help="Input text file.")
-    p_dup_lines.add_argument("--ignore-case", action="store_true", help="Compare lines case-insensitively.")
-    p_dup_lines.add_argument("--strip-ws", action="store_true", help="Trim surrounding whitespace before comparing.")
-    p_dup_lines.add_argument("--skip-empty", action="store_true", help="Ignore empty lines.")
-    p_dup_lines.add_argument("--format", choices=["text", "json"], default="text")
-    p_dup_lines.add_argument("--output", help="Optional output file.")
-    p_dup_lines.add_argument("--encoding", default="utf-8")
-    p_dup_lines.set_defaults(func=cmd_duplicate_line_finder)
-
-    p_wc = subparsers.add_parser("markdown-word-count-by-heading", help="Count words per Markdown heading section.")
-    p_wc.add_argument("--input", required=True, help="Markdown input file.")
-    p_wc.add_argument("--format", choices=["text", "json"], default="text")
-    p_wc.add_argument("--output", help="Optional output file.")
-    p_wc.add_argument("--encoding", default="utf-8")
-    p_wc.set_defaults(func=cmd_markdown_word_count_by_heading)
-
-    p_manifest_diff = subparsers.add_parser("manifest-diff", help="Compare two JSON file hash manifests.")
-    p_manifest_diff.add_argument("--base", required=True, help="Base manifest JSON file.")
-    p_manifest_diff.add_argument("--other", required=True, help="Other manifest JSON file.")
-    p_manifest_diff.add_argument("--format", choices=["text", "json"], default="text")
-    p_manifest_diff.add_argument("--output", help="Optional output file.")
-    p_manifest_diff.add_argument("--encoding", default="utf-8")
-    p_manifest_diff.set_defaults(func=cmd_manifest_diff)
-
-    p_dup_files = subparsers.add_parser("duplicate-file-finder", help="Find duplicate files by size and hash.")
-    p_dup_files.add_argument("--root", required=True, help="Project root directory.")
-    p_dup_files.add_argument("--ext", action="append", help="Include only these extensions, comma-separated or repeated.")
-    p_dup_files.add_argument("--ignore-dir", action="append", help="Additional directory names to ignore.")
-    p_dup_files.add_argument("--ignore", action="append", help="Ignore path patterns, e.g. '*.log,cache/*'.")
-    p_dup_files.add_argument("--max-depth", type=int, help="Maximum relative depth.")
-    p_dup_files.add_argument("--max-files", type=int, help="Stop scanning after N files.")
-    p_dup_files.add_argument("--include-hidden", action="store_true", help="Include hidden files and folders.")
-    p_dup_files.add_argument("--algorithm", choices=["md5", "sha1", "sha256"], default="sha256")
-    p_dup_files.add_argument("--min-size", type=int, default=1, help="Ignore files smaller than this byte size.")
-    p_dup_files.add_argument("--format", choices=["text", "json"], default="text")
-    p_dup_files.add_argument("--output", help="Optional output file.")
-    p_dup_files.add_argument("--encoding", default="utf-8")
-    p_dup_files.set_defaults(func=cmd_duplicate_file_finder)
-
-    p_toml_flatten = subparsers.add_parser("toml-key-flatten", help="Flatten TOML keys into dotted paths.")
-    p_toml_flatten.add_argument("--input", required=True, help="TOML input file.")
-    p_toml_flatten.add_argument("--format", choices=["text", "json"], default="text")
-    p_toml_flatten.add_argument("--output", help="Optional output file.")
-    p_toml_flatten.add_argument("--encoding", default="utf-8")
-    p_toml_flatten.set_defaults(func=cmd_toml_key_flatten)
-
-    p_json_to_toml = subparsers.add_parser("json-to-toml", help="Convert a JSON object file to TOML.")
-    p_json_to_toml.add_argument("--input", required=True, help="JSON input file.")
-    p_json_to_toml.add_argument("--output", help="Optional TOML output file.")
-    p_json_to_toml.add_argument("--encoding", default="utf-8")
-    p_json_to_toml.set_defaults(func=cmd_json_to_toml)
-
-    p_image_inventory = subparsers.add_parser("markdown-image-inventory", help="Inventory Markdown and HTML image references.")
-    p_image_scope = p_image_inventory.add_mutually_exclusive_group(required=True)
-    p_image_scope.add_argument("--input", help="Single Markdown input file.")
-    p_image_scope.add_argument("--root", help="Project root directory to scan for Markdown files.")
-    p_image_inventory.add_argument("--ext", action="append", help="Include only these extensions when using --root.")
-    p_image_inventory.add_argument("--ignore-dir", action="append", help="Additional directory names to ignore.")
-    p_image_inventory.add_argument("--ignore", action="append", help="Ignore path patterns, e.g. '*.log,cache/*'.")
-    p_image_inventory.add_argument("--max-depth", type=int, help="Maximum relative depth when using --root.")
-    p_image_inventory.add_argument("--max-files", type=int, help="Stop scanning after N files.")
-    p_image_inventory.add_argument("--include-hidden", action="store_true", help="Include hidden files and folders.")
-    p_image_inventory.add_argument("--no-verify-local", action="store_true", help="Do not check local file existence.")
-    p_image_inventory.add_argument("--format", choices=["text", "json"], default="text")
-    p_image_inventory.add_argument("--output", help="Optional output file.")
-    p_image_inventory.add_argument("--encoding", default="utf-8")
-    p_image_inventory.set_defaults(func=cmd_markdown_image_inventory)
-
-    p_batch_rename = subparsers.add_parser("safe-batch-rename", help="Preview or apply safe batch file renames.")
-    p_batch_rename.add_argument("--root", required=True, help="Project root directory.")
-    p_batch_rename.add_argument("--ext", action="append", help="Include only these extensions, comma-separated or repeated.")
-    p_batch_rename.add_argument("--ignore-dir", action="append", help="Additional directory names to ignore.")
-    p_batch_rename.add_argument("--ignore", action="append", help="Ignore path patterns, e.g. '*.log,cache/*'.")
-    p_batch_rename.add_argument("--max-depth", type=int, help="Maximum relative depth.")
-    p_batch_rename.add_argument("--max-files", type=int, help="Stop scanning after N files.")
-    p_batch_rename.add_argument("--include-hidden", action="store_true", help="Include hidden files and folders.")
-    p_batch_rename.add_argument("--find", help="Literal text to replace in the filename stem.")
-    p_batch_rename.add_argument("--replace", default="", help="Replacement text for --find or --regex.")
-    p_batch_rename.add_argument("--regex", help="Regex pattern applied to the filename stem.")
-    p_batch_rename.add_argument("--prefix", help="Prefix added to the filename stem.")
-    p_batch_rename.add_argument("--suffix", help="Suffix added to the filename stem before the extension.")
-    p_batch_rename.add_argument("--lowercase", action="store_true", help="Lowercase the filename stem.")
-    p_batch_rename.add_argument("--slugify", action="store_true", help="Normalize the filename stem to a safe slug.")
-    p_batch_rename.add_argument("--lowercase-extension", action="store_true", help="Lowercase the file extension.")
-    p_batch_rename.add_argument("--apply", action="store_true", help="Apply the planned renames.")
-    p_batch_rename.add_argument("--format", choices=["text", "json"], default="text")
-    p_batch_rename.add_argument("--output", help="Optional output file.")
-    p_batch_rename.add_argument("--encoding", default="utf-8")
-    p_batch_rename.set_defaults(func=cmd_safe_batch_rename)
-
-    p_freq = subparsers.add_parser("text-frequency-report", help="Build a frequency report for words, tokens, or lines.")
-    p_freq.add_argument("--input", required=True, help="Input text file.")
-    p_freq.add_argument("--mode", choices=["word", "token", "line"], default="word")
-    p_freq.add_argument("--ignore-case", action="store_true", help="Compare items case-insensitively.")
-    p_freq.add_argument("--strip-ws", action="store_true", help="Trim surrounding whitespace before counting.")
-    p_freq.add_argument("--min-length", type=int, default=1, help="Ignore items shorter than this length.")
-    p_freq.add_argument("--min-count", type=int, default=1, help="Ignore items below this count.")
-    p_freq.add_argument("--top-n", type=int, help="Limit output to the top N rows.")
-    p_freq.add_argument("--format", choices=["text", "json"], default="text")
-    p_freq.add_argument("--output", help="Optional output file.")
-    p_freq.add_argument("--encoding", default="utf-8")
-    p_freq.set_defaults(func=cmd_text_frequency_report)
-
-    p_toc = subparsers.add_parser("markdown-toc-generate", help="Generate a Markdown table of contents from headings.")
-    p_toc.add_argument("--input", required=True, help="Markdown input file.")
-    p_toc.add_argument("--min-level", type=int, default=2, help="Minimum heading level to include.")
-    p_toc.add_argument("--max-level", type=int, default=6, help="Maximum heading level to include.")
-    p_toc.add_argument("--skip-first-h1", action="store_true", help="Skip the first H1 heading.")
-    p_toc.add_argument("--output", help="Optional output file.")
-    p_toc.add_argument("--encoding", default="utf-8")
-    p_toc.set_defaults(func=cmd_markdown_toc_generate)
-
-    p_json_flatten = subparsers.add_parser("json-key-flatten", help="Flatten JSON keys into dotted paths.")
-    p_json_flatten.add_argument("--input", required=True, help="JSON input file.")
-    p_json_flatten.add_argument("--format", choices=["text", "json"], default="text")
-    p_json_flatten.add_argument("--output", help="Optional output file.")
-    p_json_flatten.add_argument("--encoding", default="utf-8")
-    p_json_flatten.set_defaults(func=cmd_json_key_flatten)
-
-    p_unique = subparsers.add_parser("unique-line-filter", help="Keep only the first unique occurrence of each line.")
-    p_unique.add_argument("--input", required=True, help="Input text file.")
-    p_unique.add_argument("--ignore-case", action="store_true", help="Compare lines case-insensitively.")
-    p_unique.add_argument("--strip-ws", action="store_true", help="Trim surrounding whitespace before comparing.")
-    p_unique.add_argument("--skip-empty", action="store_true", help="Ignore empty lines completely.")
-    p_unique.add_argument("--sort-output", action="store_true", help="Sort the unique output lines.")
-    p_unique.add_argument("--output", help="Optional output file.")
-    p_unique.add_argument("--encoding", default="utf-8")
-    p_unique.set_defaults(func=cmd_unique_line_filter)
-
-    p_path_rewrite = subparsers.add_parser("path-rewrite", help="Rewrite path prefixes across text files.")
-    p_path_rewrite.add_argument("--root", required=True, help="Project root directory.")
-    p_path_rewrite.add_argument("--from-prefix", required=True, help="Source path prefix to replace.")
-    p_path_rewrite.add_argument("--to-prefix", required=True, help="Target path prefix.")
-    p_path_rewrite.add_argument("--ext", action="append", help="Include only these extensions, comma-separated or repeated.")
-    p_path_rewrite.add_argument("--ignore-dir", action="append", help="Additional directory names to ignore.")
-    p_path_rewrite.add_argument("--ignore", action="append", help="Ignore path patterns, e.g. '*.log,cache/*'.")
-    p_path_rewrite.add_argument("--max-depth", type=int, help="Maximum relative depth.")
-    p_path_rewrite.add_argument("--max-files", type=int, help="Stop scanning after N files.")
-    p_path_rewrite.add_argument("--include-hidden", action="store_true", help="Include hidden files and folders.")
-    p_path_rewrite.add_argument("--slash-style", choices=["keep", "posix", "windows"], default="keep")
-    p_path_rewrite.add_argument("--case-sensitive", action="store_true", help="Use case-sensitive matching.")
-    p_path_rewrite.add_argument("--create-backup", action="store_true", help="Write .bak files before modifying originals.")
-    p_path_rewrite.add_argument("--apply", action="store_true", help="Apply the rewrite. Without this flag, only preview.")
-    p_path_rewrite.add_argument("--format", choices=["text", "json"], default="text")
-    p_path_rewrite.add_argument("--output", help="Optional output file.")
-    p_path_rewrite.add_argument("--encoding", default="utf-8")
-    p_path_rewrite.set_defaults(func=cmd_path_rewrite)
-
-    p_slugify = subparsers.add_parser("filename-slugify-batch", help="Preview or apply slugified filename renames.")
-    p_slugify.add_argument("--root", required=True, help="Project root directory.")
-    p_slugify.add_argument("--ext", action="append", help="Include only these extensions, comma-separated or repeated.")
-    p_slugify.add_argument("--ignore-dir", action="append", help="Additional directory names to ignore.")
-    p_slugify.add_argument("--ignore", action="append", help="Ignore path patterns, e.g. '*.log,cache/*'.")
-    p_slugify.add_argument("--max-depth", type=int, help="Maximum relative depth.")
-    p_slugify.add_argument("--max-files", type=int, help="Stop scanning after N files.")
-    p_slugify.add_argument("--include-hidden", action="store_true", help="Include hidden files and folders.")
-    p_slugify.add_argument("--lowercase-extension", action="store_true", help="Lowercase the file extension.")
-    p_slugify.add_argument("--dedupe", action="store_true", help="Append numeric suffixes to avoid duplicate targets inside the batch.")
-    p_slugify.add_argument("--apply", action="store_true", help="Apply the planned renames.")
-    p_slugify.add_argument("--format", choices=["text", "json"], default="text")
-    p_slugify.add_argument("--output", help="Optional output file.")
-    p_slugify.add_argument("--encoding", default="utf-8")
-    p_slugify.set_defaults(func=cmd_filename_slugify_batch)
+    _register_utility_commands(subparsers)
+    _register_markdown_commands(subparsers)
+    _register_data_commands(subparsers)
+    _register_text_commands(subparsers)
+    _register_file_commands(subparsers)
 
     return parser
 
 
 
-
 # Keep main() and the bootstrap block at the end of the file.
-# Add new helper functions and cmd_* handlers above build_parser().
-# Add new CLI parser entries inside build_parser() before 'return parser'.
+# Add new helper functions and cmd_* handlers above the CLI helper block.
+# Add new parser helper functions above the CLI helper block.
+# Add new command definitions inside the registration blocks above build_parser().
 
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()

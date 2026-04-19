@@ -72,44 +72,64 @@ python python_helpers.py project-index --help
 ## Current Tool Index
 
 
-- `project-index`                  Create a lightweight project file index
-- `extract-section`                Extract a Markdown section by heading
-- `extract-codeblocks`             Extract fenced code blocks from Markdown
-- `replace-between-markers`        Replace content between two markers in a file
-- `ini-to-toml`                    Convert simple INI files to TOML
-- `normalize-text`                 Normalize line endings and whitespace
-- `json-pretty`                    Validate and pretty-print JSON
-- `find-text`                      Find text matches across files
-- `safe-search-replace`            Replace text across files with dry-run support
-- `md-heading-index`               Build a Markdown heading index
-- `split-markdown-sections`        Split a Markdown file into heading-based section files
-- `project-manifest`               Create a compact project manifest
-- `frontmatter-extract`            Extract a simple frontmatter block from Markdown
-- `frontmatter-remove`             Remove a leading frontmatter block from Markdown
-- `csv-to-markdown`                Convert CSV into a padded Markdown table
-- `toml-merge`                     Deep-merge two TOML files
-- `codeblock-language-stats`       Count fenced code block languages in Markdown
-- `markdown-link-extract`          Extract Markdown inline links and images
-- `markdown-link-check`            Check local Markdown links and anchors
-- `file-hash-manifest`             Create a file hash manifest for a directory
-- `duplicate-line-finder`          Find duplicate lines in a text file
-- `markdown-word-count-by-heading` Count words per Markdown heading section
-- `manifest-diff`                  Compare two JSON file hash manifests
-- `duplicate-file-finder`          Find duplicate files by size and hash
-- `toml-key-flatten`               Flatten TOML keys into dotted paths
-- `json-to-toml`                   Convert a JSON object file to TOML
-- `markdown-image-inventory`      Inventory Markdown and HTML image references
-- `safe-batch-rename`             Preview or apply safe batch file renames
-- `text-frequency-report`         Build a frequency report for words, tokens, or lines
-- `markdown-toc-generate`         Generate a Markdown table of contents from headings
-- `json-key-flatten`              Flatten JSON keys into dotted paths
-- `unique-line-filter`            Keep only the first unique occurrence of each line
-- `path-rewrite`                  Rewrite path prefixes across text files
-- `filename-slugify-batch`        Preview or apply slugified filename renames
+### Utility / General Helpers
+
+- [`export-cli-docs`](COMMAND_REFERENCE.md#export-cli-docs) - Export CLI quick reference and command reference.
+
+### Markdown
+
+- [`codeblock-language-stats`](COMMAND_REFERENCE.md#codeblock-language-stats) - Count fenced code block languages in Markdown.
+- [`extract-codeblocks`](COMMAND_REFERENCE.md#extract-codeblocks) - Extract fenced code blocks from Markdown.
+- [`extract-section`](COMMAND_REFERENCE.md#extract-section) - Extract a Markdown section by heading.
+- [`frontmatter-extract`](COMMAND_REFERENCE.md#frontmatter-extract) - Extract a simple frontmatter block from Markdown.
+- [`frontmatter-remove`](COMMAND_REFERENCE.md#frontmatter-remove) - Remove a leading frontmatter block from Markdown.
+- [`markdown-image-inventory`](COMMAND_REFERENCE.md#markdown-image-inventory) - Inventory Markdown and HTML image references.
+- [`markdown-link-check`](COMMAND_REFERENCE.md#markdown-link-check) - Check local Markdown links and anchors.
+- [`markdown-link-extract`](COMMAND_REFERENCE.md#markdown-link-extract) - Extract Markdown inline links and images.
+- [`markdown-table-normalize`](COMMAND_REFERENCE.md#markdown-table-normalize) - Normalize Markdown tables into padded stable output.
+- [`markdown-toc-generate`](COMMAND_REFERENCE.md#markdown-toc-generate) - Generate a Markdown table of contents from headings.
+- [`markdown-word-count-by-heading`](COMMAND_REFERENCE.md#markdown-word-count-by-heading) - Count words per Markdown heading section.
+- [`md-heading-index`](COMMAND_REFERENCE.md#md-heading-index) - Build a Markdown heading index.
+- [`split-markdown-sections`](COMMAND_REFERENCE.md#split-markdown-sections) - Split a Markdown file into heading-based section files.
+
+### JSON / TOML / INI / CSV
+
+- [`csv-column-select`](COMMAND_REFERENCE.md#csv-column-select) - Select and reorder CSV columns.
+- [`csv-to-markdown`](COMMAND_REFERENCE.md#csv-to-markdown) - Convert CSV into a padded Markdown table.
+- [`ini-to-toml`](COMMAND_REFERENCE.md#ini-to-toml) - Convert a simple INI file to TOML.
+- [`json-key-flatten`](COMMAND_REFERENCE.md#json-key-flatten) - Flatten JSON keys into dotted paths.
+- [`json-pretty`](COMMAND_REFERENCE.md#json-pretty) - Validate and pretty-print JSON.
+- [`json-to-toml`](COMMAND_REFERENCE.md#json-to-toml) - Convert a JSON object file to TOML.
+- [`jsonl-to-json-array`](COMMAND_REFERENCE.md#jsonl-to-json-array) - Convert JSONL into one JSON array.
+- [`toml-key-flatten`](COMMAND_REFERENCE.md#toml-key-flatten) - Flatten TOML keys into dotted paths.
+- [`toml-merge`](COMMAND_REFERENCE.md#toml-merge) - Deep-merge two TOML files.
+- [`xml-pretty`](COMMAND_REFERENCE.md#xml-pretty) - Validate and pretty-print XML.
+
+### Text / Cleanup
+
+- [`duplicate-line-finder`](COMMAND_REFERENCE.md#duplicate-line-finder) - Find duplicate lines in a text file.
+- [`find-text`](COMMAND_REFERENCE.md#find-text) - Find text matches across files.
+- [`normalize-text`](COMMAND_REFERENCE.md#normalize-text) - Normalize line endings and whitespace.
+- [`path-rewrite`](COMMAND_REFERENCE.md#path-rewrite) - Rewrite path prefixes across text files.
+- [`replace-between-markers`](COMMAND_REFERENCE.md#replace-between-markers) - Replace text between two markers.
+- [`safe-search-replace`](COMMAND_REFERENCE.md#safe-search-replace) - Replace text across files with dry-run support.
+- [`text-chunk-split`](COMMAND_REFERENCE.md#text-chunk-split) - Split long text into reusable chunks.
+- [`text-frequency-report`](COMMAND_REFERENCE.md#text-frequency-report) - Build a frequency report for words, tokens, or lines.
+- [`unique-line-filter`](COMMAND_REFERENCE.md#unique-line-filter) - Keep only the first unique occurrence of each line.
+
+### Files / Paths / Project Scans
+
+- [`duplicate-file-finder`](COMMAND_REFERENCE.md#duplicate-file-finder) - Find duplicate files by size and hash.
+- [`file-hash-manifest`](COMMAND_REFERENCE.md#file-hash-manifest) - Create a file hash manifest for a directory.
+- [`filename-slugify-batch`](COMMAND_REFERENCE.md#filename-slugify-batch) - Preview or apply slugified filename renames.
+- [`manifest-diff`](COMMAND_REFERENCE.md#manifest-diff) - Compare two JSON file hash manifests.
+- [`project-index`](COMMAND_REFERENCE.md#project-index) - Create a lightweight file index.
+- [`project-manifest`](COMMAND_REFERENCE.md#project-manifest) - Create a compact project manifest.
+- [`safe-batch-rename`](COMMAND_REFERENCE.md#safe-batch-rename) - Preview or apply safe batch file renames.
 
 ## Tool Details
 
-## project-index
+### project-index
 
 Purpose:
 Create a fast file overview for a project root.
@@ -136,7 +156,7 @@ Important notes:
 - more ignored directories can be added with `--ignore-dir`
 - path patterns can be ignored with `--ignore`
 
-## extract-section
+### extract-section
 
 Purpose:
 Extract one Markdown section by exact heading text.
@@ -157,7 +177,7 @@ Important notes:
 - match is based on exact heading text without the leading `#`
 - the extraction stops at the next heading of the same or higher level
 
-## extract-codeblocks
+### extract-codeblocks
 
 Purpose:
 Extract fenced code blocks from Markdown files.
@@ -181,7 +201,7 @@ Important notes:
 - can output a single indexed block, all combined blocks, or separate files
 - block index is 1-based
 
-## replace-between-markers
+### replace-between-markers
 
 Purpose:
 Replace the content between two known markers.
@@ -208,7 +228,7 @@ Important notes:
 - if `--output` is omitted, the input file is overwritten
 - markers themselves stay in the file
 
-## ini-to-toml
+### ini-to-toml
 
 Purpose:
 Convert simple INI files to TOML.
@@ -224,7 +244,7 @@ Important notes:
 - preserves section names and key names
 - basic value inference is applied for integers, floats, booleans, and strings
 
-## normalize-text
+### normalize-text
 
 Purpose:
 Normalize line endings and whitespace.
@@ -244,7 +264,7 @@ Important notes:
 - trailing whitespace is removed by default
 - a final newline is enforced by default
 
-## json-pretty
+### json-pretty
 
 Purpose:
 Validate and pretty-print JSON.
@@ -263,7 +283,7 @@ Important notes:
 - invalid JSON produces an error
 - output is formatted with indentation
 
-## find-text
+### find-text
 
 Purpose:
 Find literal text or regex matches across multiple files.
@@ -283,7 +303,7 @@ Important notes:
 - can limit file count, depth, and total matches
 - respects ignored directories and ignore patterns
 
-## safe-search-replace
+### safe-search-replace
 
 Purpose:
 Replace text across multiple files with dry-run support.
@@ -303,7 +323,7 @@ Important notes:
 - optional `.bak` backup creation
 - supports literal and regex replacement
 
-## md-heading-index
+### md-heading-index
 
 Purpose:
 Build a heading index from a Markdown file.
@@ -322,7 +342,7 @@ Important notes:
 - indexes standard ATX headings (`#` to `######`)
 - reports heading level, title, line number, and anchor
 
-## split-markdown-sections
+### split-markdown-sections
 
 Purpose:
 Split a Markdown file into separate files by heading level.
@@ -342,7 +362,7 @@ Important notes:
 - output files get numeric prefixes and sanitized filenames
 - useful for large Markdown restructuring
 
-## project-manifest
+### project-manifest
 
 Purpose:
 Create a compact manifest of a project directory.
@@ -362,7 +382,7 @@ Important notes:
 - groups files by suffix
 - lists the largest files
 
-## frontmatter-extract
+### frontmatter-extract
 
 Purpose:
 Extract a simple leading frontmatter block from a Markdown file.
@@ -382,7 +402,7 @@ Important notes:
 - supports simple `key: value` lines
 - supports simple arrays like `[a, b, c]`
 
-## frontmatter-remove
+### frontmatter-remove
 
 Purpose:
 Remove a simple leading frontmatter block from a Markdown file.
@@ -397,7 +417,7 @@ Important notes:
 - only removes a frontmatter block at the file start
 - if `--output` is omitted, the input file is overwritten
 
-## csv-to-markdown
+### csv-to-markdown
 
 Purpose:
 Convert CSV input into a padded Markdown table.
@@ -417,7 +437,7 @@ Important notes:
 - uses the first row as header by default
 - `--no-header` generates synthetic column names
 
-## toml-merge
+### toml-merge
 
 Purpose:
 Deep-merge two TOML files.
@@ -437,7 +457,7 @@ Important notes:
 - scalar values in `--override` replace values from `--base`
 - requires Python with stdlib `tomllib`
 
-## codeblock-language-stats
+### codeblock-language-stats
 
 Purpose:
 Count fenced code block languages in a Markdown file.
@@ -457,7 +477,7 @@ Important notes:
 - unnamed fences are reported as `<plain>`
 - useful for documentation and mixed-language notes
 
-## markdown-link-extract
+### markdown-link-extract
 
 Purpose:
 Extract inline Markdown links and image links from a Markdown file.
@@ -477,7 +497,7 @@ Important notes:
 - scans image links like `![alt](target)`
 - classifies links as `external`, `email`, `anchor`, or `local`
 
-## markdown-link-check
+### markdown-link-check
 
 Purpose:
 Check local Markdown links and heading anchors.
@@ -498,7 +518,7 @@ Important notes:
 - anchor-only links are checked against headings in the current file
 - links like `file.md#anchor` try to validate both file and anchor
 
-## file-hash-manifest
+### file-hash-manifest
 
 Purpose:
 Create a path/size/hash manifest for a directory tree.
@@ -518,7 +538,7 @@ Important notes:
 - supports `md5`, `sha1`, and `sha256`
 - JSON output is the preferred format for follow-up tools
 
-## duplicate-line-finder
+### duplicate-line-finder
 
 Purpose:
 Find duplicate lines inside a text file.
@@ -538,7 +558,7 @@ Important notes:
 - useful for lists, tags, prompts, and URL collections
 - can compare normalized lines with optional whitespace trimming and case folding
 
-## markdown-word-count-by-heading
+### markdown-word-count-by-heading
 
 Purpose:
 Count words for each Markdown heading section.
@@ -558,7 +578,7 @@ Important notes:
 - useful for balancing long Markdown documents
 - output includes line number, heading level, and word count
 
-## manifest-diff
+### manifest-diff
 
 Purpose:
 Compare two JSON file hash manifests.
@@ -578,7 +598,7 @@ Important notes:
 - reports added, removed, changed, and unchanged files
 - expects JSON created by `file-hash-manifest`
 
-## duplicate-file-finder
+### duplicate-file-finder
 
 Purpose:
 Find duplicate files by size and hash.
@@ -598,7 +618,7 @@ Important notes:
 - reuses the same hashing logic as `file-hash-manifest`
 - `--min-size` helps ignore trivial tiny files
 
-## toml-key-flatten
+### toml-key-flatten
 
 Purpose:
 Flatten nested TOML keys into dotted key paths.
@@ -618,7 +638,7 @@ Important notes:
 - nested tables become dotted keys like `section.sub.key`
 - useful for audits and config comparison
 
-## json-to-toml
+### json-to-toml
 
 Purpose:
 Convert a JSON object file to TOML.
@@ -638,7 +658,7 @@ Important notes:
 - supports nested tables
 - supports arrays of tables for JSON arrays of objects
 
-## markdown-image-inventory
+### markdown-image-inventory
 
 Purpose:
 Inventory Markdown and HTML image references from one file or a project tree.
@@ -658,7 +678,7 @@ Important notes:
 - classifies targets as `external`, `email`, `anchor`, or `local`
 - local files are checked by default unless `--no-verify-local` is used
 
-## safe-batch-rename
+### safe-batch-rename
 
 Purpose:
 Preview or apply safe batch renames for files.
@@ -678,7 +698,7 @@ Important notes:
 - previews by default and applies only with `--apply`
 - marks duplicate targets, existing targets, and rename cycles as conflicts
 
-## text-frequency-report
+### text-frequency-report
 
 Purpose:
 Build a frequency report for words, tokens, or lines.
@@ -698,7 +718,7 @@ Important notes:
 - can limit by minimum length, minimum count, and top-N output
 - useful for tags, prompt sets, keyword lists, and rough text analysis
 
-## markdown-toc-generate
+### markdown-toc-generate
 
 Purpose:
 Generate a Markdown table of contents from headings.
@@ -718,7 +738,7 @@ Important notes:
 - heading range can be limited with `--min-level` and `--max-level`
 - useful for large documentation files and content splitting
 
-## json-key-flatten
+### json-key-flatten
 
 Purpose:
 Flatten JSON keys into dotted key paths.
@@ -738,7 +758,7 @@ Important notes:
 - nested objects become dotted paths
 - arrays are represented with index segments like `[0]`
 
-## unique-line-filter
+### unique-line-filter
 
 Purpose:
 Keep only the first unique occurrence of each line.
@@ -758,7 +778,7 @@ Important notes:
 - optional normalization can ignore case and surrounding whitespace
 - useful for lists, tags, URL files, and prompt collections
 
-## path-rewrite
+### path-rewrite
 
 Purpose:
 Rewrite path prefixes across text files.
@@ -778,7 +798,7 @@ Important notes:
 - can normalize rewritten prefixes to `keep`, `posix`, or `windows`
 - intended for path-prefix migrations across many text files
 
-## filename-slugify-batch
+### filename-slugify-batch
 
 Purpose:
 Preview or apply slugified filename renames.
